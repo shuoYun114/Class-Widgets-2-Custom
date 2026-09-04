@@ -171,6 +171,13 @@ class WidgetsWindow(ReleasableWindow, QObject):
                 floating_container.geometryChanged.connect(self.schedule_mask_update)
                 logger.info("Floating widget container connected for mask updates")
 
+            # 连接侧边栏的几何变化信号
+            schedule_sidebar = obj.findChild(QObject, "scheduleSidebar")
+            if schedule_sidebar:
+                if hasattr(schedule_sidebar, "geometryChanged"):
+                    schedule_sidebar.geometryChanged.connect(self.schedule_mask_update)
+                logger.info("Schedule sidebar connected for mask updates")
+
             self.schedule_mask_update()
             self._qml_ready = True
             self.qmlReady.emit()
@@ -270,6 +277,23 @@ class WidgetsWindow(ReleasableWindow, QObject):
             if fw_w > 0 and fw_h > 0:
                 rect = QRect(fw_x, fw_y, fw_w, fw_h)
                 mask = mask.united(QRegion(rect))
+
+        # 侧边课表栏交互区域加入 mask
+        schedule_sidebar = self.root_window.findChild(QObject, "scheduleSidebar")
+        if schedule_sidebar and schedule_sidebar.isVisible():
+            if schedule_sidebar.property("isFullWeekExpanded"):
+                # 全周大面板展开时，需要全屏透明遮罩以支持点击外部空白处收回
+                self.interactive_rect = QRegion()
+                self.root_window.setMask(QRegion())
+                return
+
+            sidebar_rects = schedule_sidebar.property("interactiveRects") or []
+            for item in sidebar_rects:
+                if len(item) == 4:
+                    rx, ry, rw, rh = item
+                    if rw > 0 and rh > 0:
+                        rect = QRect(int(rx), int(ry), int(rw), int(rh))
+                        mask = mask.united(QRegion(rect))
 
         self.interactive_rect = mask
         if mask.isEmpty():

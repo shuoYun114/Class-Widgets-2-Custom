@@ -188,6 +188,9 @@ class PreferencesConfig(ConfigBaseModel):
     floating_widget_x: Optional[int] = None  # 浮窗位置 X
     floating_widget_y: Optional[int] = None  # 浮窗位置 Y
 
+    schedule_sidebar_enabled: bool = True  # 侧边课表栏启用开关 (默认 True)
+    schedule_sidebar_collapsed: bool = False  # 侧边栏贴边折叠状态 (默认 False)
+
     class Config:
         use_enum_values = True
         extra = Extra.allow
