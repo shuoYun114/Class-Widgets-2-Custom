@@ -56,3 +56,10 @@ PlazaStatusCard 1.0 plaza/PlazaStatusCard.qml
 PluginCommentsDialog 1.0 plaza/PluginCommentsDialog.qml
 TagShowcase 1.0 plaza/TagShowcase.qml
 FilterToolbar 1.0 plaza/FilterToolbar.qml
+
+# Sidebar
+DailyScheduleBar 1.0 sidebar/DailyScheduleBar.qml
+SidebarHoverButtons 1.0 sidebar/SidebarHoverButtons.qml
+WeeklySchedulePanel 1.0 sidebar/WeeklySchedulePanel.qml
+EdgeRestoreCapsule 1.0 sidebar/EdgeRestoreCapsule.qml
+ScheduleSidebar 1.0 sidebar/ScheduleSidebar.qml
