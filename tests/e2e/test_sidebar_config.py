@@ -43,8 +43,19 @@ def config_env(tmp_path, qapp):
 # ============================================================================
 
 
-def test_preferences_config_default_values():
-    """Tier 1: 验证 PreferencesConfig 初始默认值符合契约：enabled=True, collapsed=False"""
+def test_sidebar_config_defaults(config_env):
+    """Tier 1: 验证侧边栏配置项默认值符合契约：enabled=True, collapsed=False"""
+    manager, _ = config_env
+    manager.load_config()
+
+    assert manager.preferences.schedule_sidebar_enabled is True
+    assert manager.preferences.schedule_sidebar_collapsed is False
+    assert manager.data["preferences"]["schedule_sidebar_enabled"] is True
+    assert manager.data["preferences"]["schedule_sidebar_collapsed"] is False
+
+
+def test_preferences_config_model_defaults():
+    """Tier 1: 验证 PreferencesConfig 模型类自身默认值"""
     pref = PreferencesConfig()
     assert pref.schedule_sidebar_enabled is True
     assert pref.schedule_sidebar_collapsed is False
@@ -82,9 +93,11 @@ def test_config_manager_set_and_get_collapsed(config_env):
     assert manager.data["preferences"]["schedule_sidebar_collapsed"] is False
 
 
-def test_config_save_and_load_persistence(config_env):
+def test_sidebar_config_persistence_and_restore(config_env):
     """Tier 1: 验证配置持久化写入磁盘文件并在应用重启加载后完整还原"""
     manager, config_file = config_env
+    manager.load_config()
+
     manager.set("preferences.schedule_sidebar_enabled", False)
     manager.set("preferences.schedule_sidebar_collapsed", True)
     manager.save()
@@ -100,6 +113,8 @@ def test_config_save_and_load_persistence(config_env):
 
     assert new_manager.preferences.schedule_sidebar_enabled is False
     assert new_manager.preferences.schedule_sidebar_collapsed is True
+    assert new_manager.data["preferences"]["schedule_sidebar_enabled"] is False
+    assert new_manager.data["preferences"]["schedule_sidebar_collapsed"] is True
 
 
 def test_config_signal_emitted_on_sidebar_change(config_env):
@@ -143,7 +158,6 @@ def test_config_lock_mechanism(config_env):
 def test_config_legacy_migration_without_sidebar_fields(config_env):
     """Tier 2 边界: 读取不含侧边栏字段的旧版本 config.json 时平滑升级并填充默认值"""
     manager, config_file = config_env
-    # 模拟旧版本配置文件内容，完全没有 schedule_sidebar_* 键
     legacy_json = {
         "preferences": {
             "current_theme": "com.classwidgets.default",
@@ -152,9 +166,7 @@ def test_config_legacy_migration_without_sidebar_fields(config_env):
     }
     config_file.write_text(json.dumps(legacy_json), encoding="utf-8")
 
-    # 执行加载
     manager.load_config()
-    # 必须自动补全默认值
     assert manager.preferences.schedule_sidebar_enabled is True
     assert manager.preferences.schedule_sidebar_collapsed is False
     assert manager.preferences.scale_factor == 1.2
@@ -163,11 +175,9 @@ def test_config_legacy_migration_without_sidebar_fields(config_env):
 def test_config_corrupted_json_recovery(config_env):
     """Tier 2 边界: 当配置文件内容遭到损坏截断时，能够安全捕获异常并恢复默认配置"""
     manager, config_file = config_env
-    # 写入非法语法的内容
     config_file.write_text("{ incomplete_json: 123,, ", encoding="utf-8")
 
     manager.load_config()
-    # 回退到默认配置，且侧边栏配置完好可用
     assert manager.preferences.schedule_sidebar_enabled is True
     assert manager.preferences.schedule_sidebar_collapsed is False
 

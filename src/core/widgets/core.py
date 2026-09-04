@@ -287,12 +287,38 @@ class WidgetsWindow(ReleasableWindow, QObject):
                 self.root_window.setMask(QRegion())
                 return
 
-            sidebar_rects = schedule_sidebar.property("interactiveRects") or []
+            sidebar_rects = []
+            rects_prop = schedule_sidebar.property("interactiveRects")
+            if rects_prop:
+                sidebar_rects = rects_prop
+            elif hasattr(schedule_sidebar, "getInteractiveRects"):
+                try:
+                    sidebar_rects = schedule_sidebar.getInteractiveRects()
+                except Exception:
+                    pass
+
+            sb_x = 0
+            sb_y = 0
+            if hasattr(schedule_sidebar, "x") and callable(schedule_sidebar.x):
+                try:
+                    val_x = schedule_sidebar.x()
+                    if isinstance(val_x, (int, float)):
+                        sb_x = int(val_x)
+                except Exception:
+                    pass
+            if hasattr(schedule_sidebar, "y") and callable(schedule_sidebar.y):
+                try:
+                    val_y = schedule_sidebar.y()
+                    if isinstance(val_y, (int, float)):
+                        sb_y = int(val_y)
+                except Exception:
+                    pass
+
             for item in sidebar_rects:
                 if len(item) == 4:
                     rx, ry, rw, rh = item
                     if rw > 0 and rh > 0:
-                        rect = QRect(int(rx), int(ry), int(rw), int(rh))
+                        rect = QRect(int(sb_x + rx), int(sb_y + ry), int(rw), int(rh))
                         mask = mask.united(QRegion(rect))
 
         self.interactive_rect = mask

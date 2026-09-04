@@ -154,6 +154,11 @@ QQW.Window {
         id: trayPanel
     }
 
+    ScheduleSidebar {
+        id: scheduleSidebar
+        objectName: "scheduleSidebar"
+    }
+
     Component.onCompleted: {
         updateLayer()
         // 应用当前主题的主题色

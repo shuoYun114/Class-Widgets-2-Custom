@@ -420,4 +420,32 @@ FluentPage {
             }
         }
     }
+
+    ColumnLayout {
+        Layout.fillWidth: true
+        spacing: 4
+        Text {
+            typography: Typography.BodyStrong
+            text: qsTr("Schedule Sidebar")
+        }
+
+        SettingCard {
+            Layout.fillWidth: true
+            icon.name: "ic_fluent_panel_right_20_regular"
+            title: qsTr("Enable Schedule Sidebar")
+            description: qsTr("Display daily schedule capsule on the right screen edge with quick actions and weekly matrix view")
+
+            Switch {
+                id: sidebarSwitch
+                checked: Configs.data.preferences.schedule_sidebar_enabled !== false
+                enabled: !Configs.isKeyLocked("preferences.schedule_sidebar_enabled")
+                onCheckedChanged: {
+                    if (checked !== (Configs.data.preferences.schedule_sidebar_enabled !== false)) {
+                        Configs.set("preferences.schedule_sidebar_enabled", checked)
+                    }
+                }
+            }
+        }
+    }
 }
+
