@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from typing import Optional, TYPE_CHECKING
 
 from PySide6.QtCore import QObject, Property, Signal, Slot, QCoreApplication, QTimer
@@ -224,6 +224,138 @@ class ScheduleRuntime(QObject):
     @Property(str, notify=updated)
     def currentTitle(self) -> str:
         return self.current_title or ""
+
+    def _format_sidebar_entry(
+        self,
+        entry: Entry,
+        entry_date: date,
+        now: datetime,
+        current_entry_id: Optional[str] = None,
+    ) -> dict:
+        """
+        组装符合 PROJECT.md 契约的扁平化课程信息字典
+        """
+        subject = None
+        if entry.subjectId and self.schedule and self.schedule.subjects:
+            for s in self.schedule.subjects:
+                if s.id == entry.subjectId:
+                    subject = s
+                    break
+
+        subject_name = subject.name if subject else (entry.title or "")
+        title = entry.title or (subject.name if subject else "")
+        teacher = subject.teacher if (subject and subject.teacher) else ""
+        location = subject.location if (subject and subject.location) else ""
+        color = subject.color if (subject and subject.color) else "#4A90E2"
+        entry_type = entry.type.value if hasattr(entry.type, "value") else str(entry.type)
+        time_range = f"{entry.startTime} - {entry.endTime}"
+
+        is_current = False
+        progress = 0.0
+
+        try:
+            start_time = datetime.strptime(entry.startTime, "%H:%M").time()
+            end_time = datetime.strptime(entry.endTime, "%H:%M").time()
+            start_dt = datetime.combine(entry_date, start_time)
+            end_dt = datetime.combine(entry_date, end_time)
+        except Exception:
+            start_dt = None
+            end_dt = None
+
+        if entry_date == now.date():
+            if current_entry_id and entry.id == current_entry_id:
+                is_current = True
+                progress = float(self._progress if self._progress is not None else self.get_progress_percent())
+            elif start_dt and end_dt:
+                if now < start_dt:
+                    is_current = False
+                    progress = 0.0
+                elif now >= end_dt:
+                    is_current = False
+                    progress = 1.0
+                else:
+                    is_current = True
+                    total = (end_dt - start_dt).total_seconds()
+                    progress = round((now - start_dt).total_seconds() / total, 2) if total > 0 else 1.0
+        elif entry_date < now.date():
+            is_current = False
+            progress = 1.0
+        else:
+            is_current = False
+            progress = 0.0
+
+        return {
+            "id": entry.id,
+            "title": title,
+            "startTime": entry.startTime,
+            "endTime": entry.endTime,
+            "timeRange": time_range,
+            "subjectName": subject_name,
+            "teacher": teacher,
+            "location": location,
+            "color": color,
+            "isCurrent": is_current,
+            "progress": float(progress),
+            "type": entry_type,
+        }
+
+    # SIDEBAR SCHEDULE
+    @Property(list, notify=updated)
+    def sidebarDaySchedule(self) -> list[dict]:
+        """
+        R1: 右侧边缘当天课表扁平数据列表，包含起止时间范围、教室、教师、主题色、当前课程高亮标记与进度。
+        """
+        if not self.schedule or not self.current_day:
+            return []
+
+        now = self.current_offset_time
+        entries = self.services.get_all_entries(self.current_day)
+        curr_id = self.current_entry.id if self.current_entry else None
+
+        return [
+            self._format_sidebar_entry(entry, now.date(), now, curr_id)
+            for entry in entries
+        ]
+
+    @Property(dict, notify=updated)
+    def sidebarWeekSchedule(self) -> dict:
+        """
+        R3: 全周课表 7 天网格矩阵聚合数据，以 1-7 为键映射周一至周日全量课程列表。
+        """
+        now = self.current_offset_time
+        curr_weekday = self.current_day_of_week or now.isoweekday()
+        today_date = now.date()
+
+        days_data = {}
+        if not self.schedule:
+            for day_idx in range(1, 8):
+                days_data[str(day_idx)] = []
+            return {
+                "currentDayOfWeek": curr_weekday,
+                "days": days_data,
+            }
+
+        curr_id = self.current_entry.id if self.current_entry else None
+        monday_date = today_date - timedelta(days=curr_weekday - 1)
+
+        for day_idx in range(1, 8):
+            target_date = monday_date + timedelta(days=day_idx - 1)
+            target_dt = datetime.combine(target_date, now.time())
+            day_timeline = self.services.get_day_entries(self.schedule, target_dt)
+            if not day_timeline:
+                days_data[str(day_idx)] = []
+                continue
+
+            entries = self.services.get_all_entries(day_timeline)
+            days_data[str(day_idx)] = [
+                self._format_sidebar_entry(entry, target_date, now, curr_id)
+                for entry in entries
+            ]
+
+        return {
+            "currentDayOfWeek": curr_weekday,
+            "days": days_data,
+        }
 
     def refresh(self, schedule: Optional[ScheduleData] = None) -> None:
         self._refresh_timer.stop()
