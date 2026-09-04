@@ -5,7 +5,8 @@ Class-Widgets-2 侧边栏交互遮罩与屏幕穿透测试 (Tier 1 & Tier 2)
 覆盖范围:
 - Tier 1: NORMAL 状态竖条遮罩合并、悬浮双按钮遮罩合并、COLLAPSED 贴边小胶囊微遮罩、
           EXPANDED 全周大面板外部点击全屏捕获遮罩、桌面小组件与侧边栏共存遮罩、浮窗共存遮罩、不可见侧边栏过滤
-- Tier 2: 空遮罩 1x1 安全防御、零与负尺寸过滤、多显示器负坐标支持、编辑模式与菜单全屏覆盖、极小/极大分辨率容错
+- Tier 2: 空遮罩 1x1 安全防御、零与负尺寸过滤、多显示器负坐标支持、编辑模式与菜单全屏覆盖、
+          各种分辨率自适应坐标穿透验证（1080p, 2K, 4K, 笔记本, 超宽屏）
 """
 import sys
 from unittest.mock import MagicMock
@@ -62,6 +63,15 @@ class DummyRootWindow(QObject):
 
     def property(self, name: str):
         return self._properties.get(name)
+
+    def hide(self):
+        pass
+
+    def releaseResources(self):
+        pass
+
+    def deleteLater(self):
+        pass
 
 
 class MockScheduleSidebar(QObject):
@@ -144,7 +154,8 @@ def mock_widgets_env(mock_central):
     sidebar = MockScheduleSidebar(root)
     root.add_child(sidebar)
 
-    return win, root, loader, sidebar
+    yield win, root, loader, sidebar
+    win.release()
 
 
 # ============================================================================
@@ -257,9 +268,65 @@ def test_sidebar_mask_coexistence_with_desktop_widgets(mock_widgets_env):
     assert not applied.contains(QRect(800, 300, 50, 50))
 
 
+def test_sidebar_mask_coexistence_with_floating_widget(mock_widgets_env):
+    """Tier 1: 桌面组件、浮窗小组件与侧边栏三者同时共存时的遮罩合并"""
+    win, root, _, sidebar = mock_widgets_env
+
+    # 模拟浮窗组件
+    floating = QObject(root)
+    floating.setObjectName("floatingWidgetContainer")
+    floating.isVisible = lambda: True
+    floating.x = lambda: 400
+    floating.y = lambda: 250
+    floating.width = lambda: 200
+    floating.height = lambda: 150
+    floating.property = lambda name: 1.0 if name == "scale" else None
+    root._children.append(floating)
+
+    sidebar.set_interactive_rects([[1740, 200, 180, 680]])
+
+    win.update_mask()
+
+    applied = root.get_applied_mask()
+    assert applied.contains(QRect(400, 250, 200, 150))
+    assert applied.contains(QRect(1740, 200, 180, 680))
+    assert not applied.contains(QRect(900, 500, 20, 20))
+
+
 # ============================================================================
-# Tier 2: 极端边界与空遮罩安全防御验证
+# Tier 2: 极端边界与多分辨率自适应遮罩验证
 # ============================================================================
+
+
+@pytest.mark.parametrize(
+    "res_name,screen_w,screen_h,sidebar_x,sidebar_w",
+    [
+        ("1080p", 1920, 1080, 1740, 180),
+        ("2K_QHD", 2560, 1440, 2380, 180),
+        ("4K_UHD", 3840, 2160, 3640, 200),
+        ("Laptop", 1366, 768, 1206, 160),
+        ("Ultrawide", 3440, 1440, 3260, 180),
+        ("Portrait", 1080, 1920, 920, 160),
+    ],
+)
+def test_sidebar_mask_various_screen_resolutions(
+    mock_widgets_env, res_name, screen_w, screen_h, sidebar_x, sidebar_w
+):
+    """Tier 2 边界: 不同屏幕分辨率下侧边栏交互遮罩均能准确定位，且屏幕中心 100% 穿透"""
+    win, root, _, sidebar = mock_widgets_env
+    sidebar.set_sidebar_state("NORMAL")
+    sidebar_rect = [sidebar_x, 150, sidebar_w, screen_h - 300]
+    sidebar.set_interactive_rects([sidebar_rect])
+
+    win.update_mask()
+
+    applied = root.get_applied_mask()
+    assert not applied.isEmpty()
+    # 侧边栏内部
+    assert applied.contains(QPoint(sidebar_x + 10, 200))
+    # 屏幕正中心必须穿透
+    center_point = QPoint(screen_w // 2, screen_h // 2)
+    assert not applied.contains(center_point)
 
 
 def test_sidebar_mask_empty_defense(mock_widgets_env):
@@ -310,3 +377,48 @@ def test_sidebar_mask_menu_or_edit_mode_override(mock_widgets_env):
 
     applied = root.get_applied_mask()
     assert applied.isEmpty()
+
+
+@pytest.mark.parametrize("px,py,expected_in_mask", [
+    (1750, 250, True),    # 竖条顶部内部
+    (1800, 500, True),    # 竖条中部内部
+    (1910, 800, True),    # 竖条底部边缘内部
+    (1739, 500, False),   # 竖条左侧 1 像素外 (必须穿透)
+    (500, 500, False),    # 屏幕中心 (必须穿透)
+    (0, 0, False),        # 屏幕左上角 (必须穿透)
+    (100, 1000, False),   # 屏幕左下角 (必须穿透)
+])
+def test_sidebar_mask_pixel_level_penetration_sampling(mock_widgets_env, px, py, expected_in_mask):
+    """Tier 1 [F10]: 像素级严格采样验证：只有竖条区域拦截，其余区域 100% 点击穿透"""
+    win, root, _, sidebar = mock_widgets_env
+    sidebar.set_sidebar_state("NORMAL")
+    sidebar.set_interactive_rects([[1740, 200, 180, 680]])
+
+    win.update_mask()
+    applied = root.get_applied_mask()
+    assert applied.contains(QPoint(px, py)) is expected_in_mask
+
+
+@pytest.mark.parametrize("scale", [0.5, 1.0, 1.25, 1.5, 2.0])
+def test_sidebar_mask_floating_scale_compatibility(mock_widgets_env, scale):
+    """Tier 2 边界: 浮窗处于不同系统 DPI / 自定义缩放比例 (scale) 时与侧边栏遮罩安全合并"""
+    win, root, _, sidebar = mock_widgets_env
+    floating = QObject(root)
+    floating.setObjectName("floatingWidgetContainer")
+    floating.isVisible = lambda: True
+    floating.x = lambda: 200
+    floating.y = lambda: 200
+    floating.width = lambda: 100
+    floating.height = lambda: 100
+    floating.property = lambda name: scale if name == "scale" else None
+    root._children.append(floating)
+
+    sidebar.set_interactive_rects([[1740, 200, 180, 680]])
+    win.update_mask()
+
+    applied = root.get_applied_mask()
+    scaled_w = int(100 * scale)
+    scaled_h = int(100 * scale)
+    assert applied.contains(QRect(200, 200, scaled_w, scaled_h))
+    assert applied.contains(QRect(1740, 200, 180, 680))
+

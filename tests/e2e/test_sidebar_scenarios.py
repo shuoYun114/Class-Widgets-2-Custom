@@ -597,3 +597,213 @@ def test_scenario_6_high_stress_concurrent_operations(full_integration_env):
     win.update_mask()
     assert sidebar.sidebarState == "NORMAL"
     assert root.get_mask().contains(QRect(1740, 200, 180, 680))
+
+
+def test_pair_12_collapsed_directly_disabled_in_settings(full_integration_env):
+    """Pair 12: 贴边折叠状态下直接在设置中关闭侧边栏 (COLLAPSED + Config Disable)"""
+    cfg_mgr, _, win, sidebar, root, _ = full_integration_env
+    sidebar.collapse_to_edge()
+    win.update_mask()
+    assert root.get_mask().contains(QRect(1900, 500, 20, 60))
+
+    cfg_mgr.set("preferences.schedule_sidebar_enabled", False)
+    sidebar.set_visible(False)
+    win.update_mask()
+    # 贴边胶囊也被移除，退化为最小 1x1 遮罩
+    assert root.get_mask().boundingRect() == QRect(0, 0, 1, 1)
+
+
+def test_pair_13_expanded_midnight_rollover(full_integration_env):
+    """Pair 13: 全周大面板展开状态下跨天，底层全周数据 currentDayOfWeek 自动推进"""
+    _, runtime, _, sidebar, _, schedule = full_integration_env
+    sidebar.expand_full_week()
+
+    # 周一午夜前
+    t1 = datetime(2026, 9, 7, 23, 59, 55)
+    setup_runtime(runtime, schedule, t1)
+    week_sched1 = runtime.sidebarWeekSchedule
+    assert week_sched1["currentDayOfWeek"] == 1
+
+    # 推进到周二凌晨
+    t2 = datetime(2026, 9, 8, 0, 0, 5)
+    setup_runtime(runtime, schedule, t2)
+    week_sched2 = runtime.sidebarWeekSchedule
+    assert week_sched2["currentDayOfWeek"] == 2
+
+
+def test_pair_14_hover_debounce_rapid_flicker(full_integration_env):
+    """Pair 14: 连续快速移入移出 10 次防抖缓冲状态机测试"""
+    _, _, win, sidebar, root, _ = full_integration_env
+
+    for _ in range(10):
+        sidebar.show_hover_buttons()
+        sidebar.start_hover_leave_buffer()
+        sidebar.cancel_hover_leave_buffer()
+
+    win.update_mask()
+    assert sidebar._hover_buttons_visible is True
+    assert root.get_mask().contains(QRect(1690, 300, 40, 90))
+
+
+def test_pair_15_floating_mode_and_sidebar_isolation(full_integration_env):
+    """Pair 15: 浮窗模式与侧边栏同时存在下的交互区域隔离"""
+    _, _, win, sidebar, root, _ = full_integration_env
+    # 添加浮窗
+    floating = QObject(root)
+    floating.setObjectName("floatingWidgetContainer")
+    floating.isVisible = lambda: True
+    floating.x = lambda: 300
+    floating.y = lambda: 200
+    floating.width = lambda: 250
+    floating.height = lambda: 180
+    floating.property = lambda name: 1.0 if name == "scale" else None
+    root._children.append(floating)
+
+    sidebar.to_normal_state()
+    win.update_mask()
+
+    mask = root.get_mask()
+    assert mask.contains(QRect(300, 200, 250, 180))
+    assert mask.contains(QRect(1740, 200, 180, 680))
+    # 两者之间的空白桌面完全穿透
+    assert not mask.contains(QRect(1000, 200, 50, 50))
+
+
+def test_scenario_7_reschedule_full_day_lifecycle(full_integration_env):
+    """Scenario 7: 调休全天完整生命周期流转（周六补周一课：课前、上课、全周矩阵与折叠）"""
+    cfg_mgr, runtime, win, sidebar, root, schedule = full_integration_env
+    cfg_mgr.schedule.reschedule_day = {"2026-09-12": 1}
+
+    # 1. 07:50 课前
+    t1 = datetime(2026, 9, 12, 7, 50)
+    setup_runtime(runtime, schedule, t1)
+    assert len(runtime.sidebarDaySchedule) == 3
+    assert runtime.sidebarDaySchedule[0]["isCurrent"] is False
+
+    # 2. 08:20 正在上周一第 1 节数学课
+    t2 = datetime(2026, 9, 12, 8, 20)
+    setup_runtime(runtime, schedule, t2)
+    assert runtime.sidebarDaySchedule[0]["isCurrent"] is True
+
+    # 3. 展开全周，确认正常捕获
+    sidebar.expand_full_week()
+    win.update_mask()
+    assert root.get_mask().isEmpty()
+
+    # 4. 收回并折叠贴边
+    sidebar.collapse_to_edge()
+    win.update_mask()
+    assert root.get_mask().contains(QRect(1900, 500, 20, 60))
+
+
+def test_scenario_8_multi_week_alternation_lifecycle(full_integration_env):
+    """Scenario 8: 多周轮次（单双周）跨周上课完整流转测试"""
+    subjects = [
+        Subject(id="sub_s", name="单周上机", teacher="陈老师"),
+        Subject(id="sub_d", name="双周研讨", teacher="林老师"),
+    ]
+    days = [
+        Timeline(id="t_s", dayOfWeek=[1], weeks=[1], entries=[
+            Entry(id="es", type=EntryType.CLASS, startTime="10:00", endTime="11:40", subjectId="sub_s")
+        ]),
+        Timeline(id="t_d", dayOfWeek=[1], weeks=[2], entries=[
+            Entry(id="ed", type=EntryType.CLASS, startTime="10:00", endTime="11:40", subjectId="sub_d")
+        ]),
+    ]
+    sched = ScheduleData(
+        meta=MetaInfo(id="m_cycle", startDate="2026-09-07", maxWeekCycle=2),
+        subjects=subjects,
+        days=days,
+        overrides=[],
+    )
+
+    _, runtime, _, _, _, _ = full_integration_env
+
+    # 第 1 周单周 10:30 上机
+    w1_dt = datetime(2026, 9, 7, 10, 30)
+    setup_runtime(runtime, sched, w1_dt)
+    assert runtime.sidebarDaySchedule[0]["subjectName"] == "单周上机"
+    assert runtime.sidebarDaySchedule[0]["isCurrent"] is True
+
+    # 第 2 周双周 10:30 研讨
+    w2_dt = datetime(2026, 9, 14, 10, 30)
+    setup_runtime(runtime, sched, w2_dt)
+    assert runtime.sidebarDaySchedule[0]["subjectName"] == "双周研讨"
+    assert runtime.sidebarDaySchedule[0]["isCurrent"] is True
+
+
+def test_pair_16_theme_changed_sidebar_stability(full_integration_env):
+    """Pair 16: 主题切换过程中侧边栏状态保持与遮罩重新注册"""
+    _, _, win, sidebar, root, _ = full_integration_env
+    sidebar.to_normal_state()
+    win.update_mask()
+    assert root.get_mask().contains(QRect(1740, 200, 180, 680))
+
+    # 触发主题变更
+    win.on_theme_changed()
+    # 模拟重载后触发 mask 更新
+    win.update_mask()
+    assert sidebar.sidebarState == "NORMAL"
+    assert root.get_mask().contains(QRect(1740, 200, 180, 680))
+
+
+def test_pair_17_sidebar_with_extreme_small_screen(full_integration_env):
+    """Pair 17: 800x600 极小分辨率下侧边栏尺寸与遮罩自适应"""
+    _, _, win, sidebar, root, _ = full_integration_env
+    sidebar.to_normal_state()
+    # 极小屏幕下竖条缩紧至 x=640, y=50, 宽=150, 高=500
+    sidebar._interactive_rects = [[640, 50, 150, 500]]
+    win.update_mask()
+
+    mask = root.get_mask()
+    assert mask.contains(QRect(640, 50, 150, 500))
+    # 屏幕中心 (400, 300) 穿透
+    assert not mask.contains(QPoint(400, 300))
+
+
+def test_scenario_9_unassigned_teacher_location_bubble(full_integration_env):
+    """Scenario 9: 课程无教师、无地点信息时的悬浮气泡展现与回退展示"""
+    _, runtime, _, _, _, _ = full_integration_env
+    incomplete_subject = Subject(id="s_empty", name="专题自习")
+    day = Timeline(id="tl_emp", dayOfWeek=[1], weeks="all", entries=[
+        Entry(id="e_emp", type=EntryType.CLASS, startTime="15:00", endTime="16:00", subjectId="s_empty")
+    ])
+    sched = ScheduleData(
+        meta=MetaInfo(id="m_emp", startDate="2026-09-07", maxWeekCycle=1),
+        subjects=[incomplete_subject],
+        days=[day],
+        overrides=[],
+    )
+    t = datetime(2026, 9, 7, 15, 30)
+    setup_runtime(runtime, sched, t)
+
+    res = runtime.sidebarDaySchedule
+    assert len(res) == 1
+    assert res[0]["subjectName"] == "专题自习"
+    assert res[0]["teacher"] == ""
+    assert res[0]["location"] == ""
+    assert res[0]["isCurrent"] is True
+
+
+def test_scenario_10_full_week_external_click_boundary_clicks(full_integration_env):
+    """Scenario 10: 全周大面板展开后，测试点击面板外 4 个边缘位置均能稳定触发收回"""
+    _, _, win, sidebar, root, _ = full_integration_env
+    sidebar.expand_full_week()
+    win.update_mask()
+    assert root.get_mask().isEmpty()
+
+    # 模拟在面板外上方、左侧、下方点击收回
+    for click_loc in ["top", "left", "bottom", "remote"]:
+        # 外部点击触发收回
+        sidebar.to_normal_state()
+        win.update_mask()
+        assert sidebar.sidebarState == "NORMAL"
+        assert root.get_mask().contains(QRect(1740, 200, 180, 680))
+
+        # 再次展开为下次循环做准备
+        if click_loc != "remote":
+            sidebar.expand_full_week()
+            win.update_mask()
+            assert root.get_mask().isEmpty()
+
+

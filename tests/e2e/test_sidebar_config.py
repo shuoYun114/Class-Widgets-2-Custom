@@ -6,7 +6,7 @@ Class-Widgets-2 侧边栏配置管理与持久化测试 (Tier 1 & Tier 2)
 - Tier 1: PreferencesConfig 字段默认值、ConfigManager 点分键写入与读取、
           JSON 持久化落盘与二次加载还原、变更信号触发、键锁定安全防御
 - Tier 2: 旧版无字段配置平滑升级兼容、损坏 JSON 自动容错回退、
-          类型校验与类型转换、快速连击状态切换一致性
+          类型校验与类型转换、快速连击状态切换一致性、嵌套字段解析与自动建目录
 """
 import json
 import sys
@@ -141,13 +141,30 @@ def test_config_lock_mechanism(config_env):
 
     # 尝试修改被锁定的配置
     manager.set(lock_key, False)
-    assert manager.preferences.schedule_sidebar_enabled is True  # 依然保持 True
+    assert manager.preferences.schedule_sidebar_enabled is True
 
     # 解锁后允许修改
     manager.unlock(lock_key)
     assert manager.isKeyLocked(lock_key) is False
     manager.set(lock_key, False)
     assert manager.preferences.schedule_sidebar_enabled is False
+
+
+@pytest.mark.parametrize("target_key,val1,val2", [
+    ("preferences.schedule_sidebar_enabled", False, True),
+    ("preferences.schedule_sidebar_collapsed", True, False),
+])
+def test_config_roundtrip_values(config_env, target_key, val1, val2):
+    """Tier 1: 循环修改两组键值并在 data 字典与模型对象之间交叉比对一致性"""
+    manager, _ = config_env
+    manager.set(target_key, val1)
+    field_name = target_key.split(".")[-1]
+    assert getattr(manager.preferences, field_name) is val1
+    assert manager.data["preferences"][field_name] is val1
+
+    manager.set(target_key, val2)
+    assert getattr(manager.preferences, field_name) is val2
+    assert manager.data["preferences"][field_name] is val2
 
 
 # ============================================================================
@@ -198,3 +215,32 @@ def test_config_rapid_toggle_consistency(config_env):
     assert manager.preferences.schedule_sidebar_collapsed is True
     assert disk_data["preferences"]["schedule_sidebar_enabled"] is False
     assert disk_data["preferences"]["schedule_sidebar_collapsed"] is True
+
+
+def test_config_auto_create_nested_directory(tmp_path, qapp):
+    """Tier 2 边界: 配置文件所在的深层多级父目录不存在时，调用 save 自动安全创建父目录"""
+    deep_dir = tmp_path / "deep" / "nested" / "path" / "config"
+    assert not deep_dir.exists()
+    filename = "deep_config.json"
+    manager = ConfigManager(deep_dir, filename)
+
+    manager.set("preferences.schedule_sidebar_enabled", True)
+    manager.save()
+
+    assert deep_dir.exists()
+    assert (deep_dir / filename).exists()
+
+
+@pytest.mark.parametrize("empty_input", ["", "   ", "{}", "[]"])
+def test_config_empty_or_minimal_file_recovery(tmp_path, qapp, empty_input):
+    """Tier 2 边界: 空文件或极简内容时安全容错回退为可用配置"""
+    cfg_dir = tmp_path / "empty_test"
+    cfg_dir.mkdir(parents=True, exist_ok=True)
+    cfg_file = cfg_dir / "config.json"
+    cfg_file.write_text(empty_input, encoding="utf-8")
+
+    manager = ConfigManager(cfg_dir, "config.json")
+    manager.load_config()
+
+    assert manager.preferences.schedule_sidebar_enabled is True
+    assert manager.preferences.schedule_sidebar_collapsed is False

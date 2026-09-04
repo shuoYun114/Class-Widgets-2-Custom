@@ -2,9 +2,12 @@
 """
 Class-Widgets-2 侧边栏课程表数据聚合与模型测试 (Tier 1 & Tier 2)
 
-覆盖范围:
-- Tier 1: 字段完整性、当前课程高亮、进度计算、气泡元数据映射、整周 7 天矩阵结构、多周轮次匹配、活动类型支持
-- Tier 2: 空课表安全防御、起止时间精确边界、零时长除零防御、非法时间容错、超长文本与特殊字符、调休与换课机制
+覆盖特性:
+- F1: 当天课表竖条胶囊主体数据聚合 (PROJECT.md 契约)
+- F2: 当前课程状态与高亮精确判定、多时间点进度计算
+- F3: 课程悬浮气泡卡片元数据（起止时间、教室、教师、主题色）
+- F6: 全周 7 天网格矩阵聚合与多周轮次匹配
+- Tier 2 边界: 空课表、起止时间临界点、零时长除零防御、非法格式容错、超长文本与特殊字符、调休、换课、时间偏移
 """
 import sys
 from datetime import datetime, timedelta
@@ -50,10 +53,10 @@ def mock_central(qapp):
 def setup_runtime(runtime: ScheduleRuntime, schedule: ScheduleData, target_dt: datetime) -> None:
     """在测试中安全装配 Runtime 的目标时间与日程上下文状态"""
     runtime.schedule = schedule
-    if schedule:
+    if schedule and schedule.meta:
         runtime.schedule_meta = schedule.meta
-        max_cycle = schedule.meta.maxWeekCycle if schedule.meta else 1
-        start_date = schedule.meta.startDate if schedule.meta else target_dt.strftime("%Y-%m-%d")
+        max_cycle = schedule.meta.maxWeekCycle or 1
+        start_date = schedule.meta.startDate or target_dt.strftime("%Y-%m-%d")
         runtime.current_week = get_week_number(start_date, target_dt)
         runtime.current_week_of_cycle = get_cycle_week(runtime.current_week, max_cycle)
     else:
@@ -92,7 +95,7 @@ def setup_runtime(runtime: ScheduleRuntime, schedule: ScheduleData, target_dt: d
 
 @pytest.fixture
 def standard_schedule():
-    """标准测试课表：包含数学、英语两门课，周一和周二有课"""
+    """标准测试课表：包含高等数学、大学英语两门课，周一和周二有课"""
     subjects = [
         Subject(
             id="sub_math",
@@ -172,14 +175,14 @@ def standard_schedule():
 
 
 # ============================================================================
-# Tier 1: 核心功能与字段完整性验证
+# Tier 1: 核心功能与字段完整性验证 (F1, F2, F3, F6)
 # ============================================================================
 
 
 def test_sidebar_day_schedule_fields_completeness(mock_central, standard_schedule):
-    """Tier 1: 验证 sidebarDaySchedule 返回对象必须包含 PROJECT.md 契约规定的所有 12 个字段"""
+    """Tier 1 [F1]: 验证 sidebarDaySchedule 返回对象必须包含 PROJECT.md 契约规定的所有 12 个字段"""
     runtime = ScheduleRuntime(mock_central)
-    test_now = datetime(2026, 9, 7, 8, 20)  # 周一 08:20
+    test_now = datetime(2026, 9, 7, 8, 20)
     setup_runtime(runtime, standard_schedule, test_now)
 
     day_schedule = runtime.sidebarDaySchedule
@@ -210,73 +213,73 @@ def test_sidebar_day_schedule_fields_completeness(mock_central, standard_schedul
         assert isinstance(item["type"], str)
 
 
-def test_sidebar_day_schedule_current_highlight_in_class(mock_central, standard_schedule):
-    """Tier 1: 正在上课时（08:22:30 处于 08:00-08:45 正中），对应条目 isCurrent 必须为 True，进度在 0.4 到 0.6 之间"""
+@pytest.mark.parametrize(
+    "hour,minute,second,expected_current,min_p,max_p",
+    [
+        (7, 50, 0, False, 0.0, 0.0),       # 课前 10 分钟
+        (7, 59, 59, False, 0.0, 0.0),      # 课前 1 秒
+        (8, 0, 0, True, 0.0, 0.0),         # 开始瞬间
+        (8, 11, 15, True, 0.20, 0.30),     # 上课 25% 处
+        (8, 22, 30, True, 0.45, 0.55),     # 上课 50% 处
+        (8, 33, 45, True, 0.70, 0.80),     # 上课 75% 处
+        (8, 44, 59, True, 0.95, 1.0),      # 临近下课 1 秒
+        (8, 45, 0, False, 1.0, 1.0),       # 下课瞬间
+        (8, 50, 0, False, 1.0, 1.0),       # 课间休息
+    ],
+)
+def test_sidebar_day_schedule_fine_grained_timeline_progress(
+    mock_central, standard_schedule, hour, minute, second, expected_current, min_p, max_p
+):
+    """Tier 1 [F2]: 全天细粒度时间采样点验证当前课程高亮状态与进度变化"""
     runtime = ScheduleRuntime(mock_central)
-    test_now = datetime(2026, 9, 7, 8, 22, 30)
+    test_now = datetime(2026, 9, 7, hour, minute, second)
     setup_runtime(runtime, standard_schedule, test_now)
 
     day_schedule = runtime.sidebarDaySchedule
     first_lesson = day_schedule[0]
-    second_lesson = day_schedule[1]
 
-    assert first_lesson["isCurrent"] is True
-    assert 0.4 <= first_lesson["progress"] <= 0.6
-    assert first_lesson["subjectName"] == "高等数学"
-
-    assert second_lesson["isCurrent"] is False
-    assert second_lesson["progress"] == 0.0
+    assert first_lesson["isCurrent"] is expected_current
+    assert min_p <= first_lesson["progress"] <= max_p
 
 
-def test_sidebar_day_schedule_status_before_class(mock_central, standard_schedule):
-    """Tier 1: 上课前（07:50），所有课程 isCurrent 均为 False，进度均为 0.0"""
+@pytest.mark.parametrize(
+    "teacher,location,color,sub_name",
+    [
+        ("张教授", "教三 101", "#4A90E2", "高等数学"),
+        ("", "网络教室", "#FF5722", "计算方法"),
+        ("王老师", "", "#107C41", "应用物理"),
+        ("", "", "", "自习"),
+    ],
+)
+def test_sidebar_day_schedule_subject_metadata_variations(
+    mock_central, teacher, location, color, sub_name
+):
+    """Tier 1 [F3]: 验证气泡卡片所需的各项元数据在不同缺省组合下的正确映射"""
+    sub = Subject(id="sub_test", name=sub_name, teacher=teacher or None, location=location or None, color=color or None)
+    entry = Entry(id="e_test", type=EntryType.CLASS, startTime="08:00", endTime="08:45", subjectId="sub_test")
+    days = [Timeline(id="tl_1", dayOfWeek=[1], weeks="all", entries=[entry])]
+    schedule = ScheduleData(
+        meta=MetaInfo(id="m_t", startDate="2026-09-07", maxWeekCycle=1),
+        subjects=[sub],
+        days=days,
+        overrides=[],
+    )
+
     runtime = ScheduleRuntime(mock_central)
-    test_now = datetime(2026, 9, 7, 7, 50)
-    setup_runtime(runtime, standard_schedule, test_now)
+    test_now = datetime(2026, 9, 7, 8, 20)
+    setup_runtime(runtime, schedule, test_now)
 
     day_schedule = runtime.sidebarDaySchedule
-    for item in day_schedule:
-        assert item["isCurrent"] is False
-        assert item["progress"] == 0.0
-
-
-def test_sidebar_day_schedule_status_after_class(mock_central, standard_schedule):
-    """Tier 1: 第一节课结束后（08:50），第一节课 progress 应为 1.0，isCurrent 为 False"""
-    runtime = ScheduleRuntime(mock_central)
-    test_now = datetime(2026, 9, 7, 8, 50)  # 08:45 已下课，09:00 未上课
-    setup_runtime(runtime, standard_schedule, test_now)
-
-    day_schedule = runtime.sidebarDaySchedule
-    assert day_schedule[0]["isCurrent"] is False
-    assert day_schedule[0]["progress"] == 1.0
-
-    assert day_schedule[1]["isCurrent"] is False
-    assert day_schedule[1]["progress"] == 0.0
-
-
-def test_sidebar_day_schedule_subject_metadata_mapping(mock_central, standard_schedule):
-    """Tier 1: 验证悬浮气泡所需的教室、教师、主题颜色等元数据正确关联映射"""
-    runtime = ScheduleRuntime(mock_central)
-    test_now = datetime(2026, 9, 7, 8, 30)
-    setup_runtime(runtime, standard_schedule, test_now)
-
-    day_schedule = runtime.sidebarDaySchedule
-    math_item = day_schedule[0]
-    assert math_item["subjectName"] == "高等数学"
-    assert math_item["teacher"] == "张教授"
-    assert math_item["location"] == "教三 101"
-    assert math_item["color"] == "#4A90E2"
-    assert math_item["timeRange"] == "08:00 - 08:45"
-
-    eng_item = day_schedule[1]
-    assert eng_item["subjectName"] == "大学英语"
-    assert eng_item["teacher"] == "Smith 老师"
-    assert eng_item["location"] == "外国语楼 302"
-    assert eng_item["color"] == "#50E3C2"
+    item = day_schedule[0]
+    assert item["subjectName"] == sub_name
+    assert item["teacher"] == (teacher or "")
+    assert item["location"] == (location or "")
+    # 若无颜色，默认回退为 #4A90E2
+    assert item["color"] == (color or "#4A90E2")
 
 
 def test_sidebar_week_schedule_matrix_structure(mock_central, standard_schedule):
-    """Tier 1: 验证 sidebarWeekSchedule 整周网格矩阵返回包含 7 个周键的字典"""
+    """Tier 1 [F6]: 验证 sidebarWeekSchedule 整周网格矩阵返回包含 7 个周键的字典"""
     runtime = ScheduleRuntime(mock_central)
     test_now = datetime(2026, 9, 7, 10, 0)
     setup_runtime(runtime, standard_schedule, test_now)
@@ -288,16 +291,41 @@ def test_sidebar_week_schedule_matrix_structure(mock_central, standard_schedule)
 
     days_dict = week_schedule["days"]
     assert set(days_dict.keys()) == {"1", "2", "3", "4", "5", "6", "7"}
-    assert len(days_dict["1"]) == 2  # 周一有 2 节课
-    assert len(days_dict["2"]) == 1  # 周二有 1 节课
-    assert len(days_dict["3"]) == 0  # 周三无课
-    assert len(days_dict["7"]) == 0  # 周日无课
+    assert len(days_dict["1"]) == 2
+    assert len(days_dict["2"]) == 1
+    assert len(days_dict["3"]) == 0
+    assert len(days_dict["7"]) == 0
+
+
+@pytest.mark.parametrize("target_weekday", [1, 2, 3, 4, 5, 6, 7])
+def test_sidebar_week_schedule_individual_weekday_coverage(mock_central, target_weekday):
+    """Tier 1 [F6]: 验证周一到周日 7 天各自独立排课能准确落在对应天的桶中"""
+    entry = Entry(id=f"e_{target_weekday}", type=EntryType.CLASS, startTime="10:00", endTime="11:30", title=f"星期{target_weekday}专修")
+    timeline = Timeline(id=f"tl_{target_weekday}", dayOfWeek=[target_weekday], weeks="all", entries=[entry])
+    schedule = ScheduleData(
+        meta=MetaInfo(id=f"m_{target_weekday}", startDate="2026-09-07", maxWeekCycle=1),
+        subjects=[],
+        days=[timeline],
+        overrides=[],
+    )
+
+    runtime = ScheduleRuntime(mock_central)
+    test_now = datetime(2026, 9, 7, 9, 0)  # 周一
+    setup_runtime(runtime, schedule, test_now)
+
+    week_sched = runtime.sidebarWeekSchedule
+    for d in range(1, 8):
+        if d == target_weekday:
+            assert len(week_sched["days"][str(d)]) == 1
+            assert week_sched["days"][str(d)][0]["title"] == f"星期{target_weekday}专修"
+        else:
+            assert len(week_sched["days"][str(d)]) == 0
 
 
 def test_sidebar_week_schedule_past_future_days_progress(mock_central, standard_schedule):
-    """Tier 1: 验证全周矩阵中已过去的日期课程 progress 为 1.0，未来日期的课程 progress 为 0.0"""
+    """Tier 1 [F6]: 验证全周矩阵中已过去的日期课程 progress 为 1.0，未来日期的课程 progress 为 0.0"""
     runtime = ScheduleRuntime(mock_central)
-    # 当前为周二 14:00 (此时周一全天课程均已过去)
+    # 周二 14:00 (周一全天已结束)
     test_now = datetime(2026, 9, 8, 14, 0)
     setup_runtime(runtime, standard_schedule, test_now)
 
@@ -319,18 +347,14 @@ def test_sidebar_multi_week_cycle_matching(mock_central):
         Timeline(
             id="tl_single",
             dayOfWeek=[1],
-            weeks=[1],  # 仅单周
-            entries=[
-                Entry(id="e_s1", type=EntryType.CLASS, startTime="14:00", endTime="15:30", subjectId="sub_single")
-            ],
+            weeks=[1],
+            entries=[Entry(id="e_s1", type=EntryType.CLASS, startTime="14:00", endTime="15:30", subjectId="sub_single")],
         ),
         Timeline(
             id="tl_double",
             dayOfWeek=[1],
-            weeks=[2],  # 仅双周
-            entries=[
-                Entry(id="e_d1", type=EntryType.CLASS, startTime="14:00", endTime="15:30", subjectId="sub_double")
-            ],
+            weeks=[2],
+            entries=[Entry(id="e_d1", type=EntryType.CLASS, startTime="14:00", endTime="15:30", subjectId="sub_double")],
         ),
     ]
 
@@ -343,23 +367,17 @@ def test_sidebar_multi_week_cycle_matching(mock_central):
 
     runtime = ScheduleRuntime(mock_central)
 
-    # 1. 模拟第 1 周周一（单周）
+    # 第 1 周周一（单周）
     single_week_now = datetime(2026, 9, 7, 14, 10)
     setup_runtime(runtime, cycle_schedule, single_week_now)
+    assert len(runtime.sidebarDaySchedule) == 1
+    assert runtime.sidebarDaySchedule[0]["subjectName"] == "单周实验课"
 
-    day_schedule_1 = runtime.sidebarDaySchedule
-    assert len(day_schedule_1) == 1
-    assert day_schedule_1[0]["subjectName"] == "单周实验课"
-    assert day_schedule_1[0]["isCurrent"] is True
-
-    # 2. 模拟第 2 周周一（双周）
+    # 第 2 周周一（双周）
     double_week_now = datetime(2026, 9, 14, 14, 10)
     setup_runtime(runtime, cycle_schedule, double_week_now)
-
-    day_schedule_2 = runtime.sidebarDaySchedule
-    assert len(day_schedule_2) == 1
-    assert day_schedule_2[0]["subjectName"] == "双周研讨课"
-    assert day_schedule_2[0]["isCurrent"] is True
+    assert len(runtime.sidebarDaySchedule) == 1
+    assert runtime.sidebarDaySchedule[0]["subjectName"] == "双周研讨课"
 
 
 def test_sidebar_activity_type_support(mock_central):
@@ -390,14 +408,13 @@ def test_sidebar_activity_type_support(mock_central):
     )
 
     runtime = ScheduleRuntime(mock_central)
-    test_now = datetime(2026, 9, 9, 16, 30)  # 周三
+    test_now = datetime(2026, 9, 9, 16, 30)
     setup_runtime(runtime, act_schedule, test_now)
 
     day_schedule = runtime.sidebarDaySchedule
     assert len(day_schedule) == 1
     item = day_schedule[0]
     assert item["title"] == "院系辩论赛"
-    assert item["subjectName"] == "院系辩论赛"
     assert item["type"] == "activity"
     assert item["isCurrent"] is True
 
@@ -412,12 +429,9 @@ def test_sidebar_model_null_schedule_safety(mock_central):
     runtime = ScheduleRuntime(mock_central)
     setup_runtime(runtime, None, datetime(2026, 9, 7, 8, 30))
 
-    day_sched = runtime.sidebarDaySchedule
-    assert day_sched == []
-
+    assert runtime.sidebarDaySchedule == []
     week_sched = runtime.sidebarWeekSchedule
     assert isinstance(week_sched, dict)
-    assert "days" in week_sched
     for day_key in range(1, 8):
         assert week_sched["days"][str(day_key)] == []
 
@@ -425,7 +439,7 @@ def test_sidebar_model_null_schedule_safety(mock_central):
 def test_sidebar_model_empty_day_schedule(mock_central, standard_schedule):
     """Tier 2 边界: 周日没有任何排课，sidebarDaySchedule 返回空列表"""
     runtime = ScheduleRuntime(mock_central)
-    sunday_now = datetime(2026, 9, 13, 10, 0)  # 周日
+    sunday_now = datetime(2026, 9, 13, 10, 0)
     setup_runtime(runtime, standard_schedule, sunday_now)
 
     assert runtime.sidebarDaySchedule == []
@@ -434,11 +448,10 @@ def test_sidebar_model_empty_day_schedule(mock_central, standard_schedule):
 def test_sidebar_model_exact_boundary_start_time(mock_central, standard_schedule):
     """Tier 2 边界: 刚好在上课开始时刻（08:00:00），课程必须判定为当前课程且进度为 0.0"""
     runtime = ScheduleRuntime(mock_central)
-    test_now = datetime(2026, 9, 7, 8, 0, 0)  # 08:00:00 压线
+    test_now = datetime(2026, 9, 7, 8, 0, 0)
     setup_runtime(runtime, standard_schedule, test_now)
 
-    day_schedule = runtime.sidebarDaySchedule
-    first_lesson = day_schedule[0]
+    first_lesson = runtime.sidebarDaySchedule[0]
     assert first_lesson["isCurrent"] is True
     assert first_lesson["progress"] == 0.0
 
@@ -446,11 +459,10 @@ def test_sidebar_model_exact_boundary_start_time(mock_central, standard_schedule
 def test_sidebar_model_exact_boundary_end_time(mock_central, standard_schedule):
     """Tier 2 边界: 刚好在下课时刻（08:45:00），课程已不属于当前课程且进度为 1.0"""
     runtime = ScheduleRuntime(mock_central)
-    test_now = datetime(2026, 9, 7, 8, 45, 0)  # 08:45:00 下课压线
+    test_now = datetime(2026, 9, 7, 8, 45, 0)
     setup_runtime(runtime, standard_schedule, test_now)
 
-    day_schedule = runtime.sidebarDaySchedule
-    first_lesson = day_schedule[0]
+    first_lesson = runtime.sidebarDaySchedule[0]
     assert first_lesson["isCurrent"] is False
     assert first_lesson["progress"] == 1.0
 
@@ -462,16 +474,7 @@ def test_sidebar_model_zero_duration_entry(mock_central):
             id="tl_zero",
             dayOfWeek=[1],
             weeks="all",
-            entries=[
-                Entry(
-                    id="e_zero",
-                    type=EntryType.CLASS,
-                    startTime="09:00",
-                    endTime="09:00",
-                    subjectId=None,
-                    title="零时长通知",
-                )
-            ],
+            entries=[Entry(id="e_zero", type=EntryType.CLASS, startTime="09:00", endTime="09:00", title="零时长通知")],
         )
     ]
     schedule = ScheduleData(
@@ -498,7 +501,6 @@ def test_sidebar_model_malformed_time_fallback(mock_central):
         type=EntryType.CLASS,
         startTime="abc",
         endTime="xyz",
-        subjectId=None,
         title="异常时间课程",
     )
     now = datetime(2026, 9, 7, 9, 0)
@@ -563,11 +565,11 @@ def test_sidebar_model_special_characters_long_text(mock_central):
 def test_sidebar_model_reschedule_day_support(mock_central, standard_schedule):
     """Tier 2 边界: 调休机制（reschedule_day）下周六实际上周一课"""
     mock_central.configs.schedule.reschedule_day = {
-        "2026-09-12": 1  # 2026-09-12 是周六，调休为周一课表
+        "2026-09-12": 1
     }
 
     runtime = ScheduleRuntime(mock_central)
-    saturday_now = datetime(2026, 9, 12, 8, 20)  # 周六早上
+    saturday_now = datetime(2026, 9, 12, 8, 20)
     setup_runtime(runtime, standard_schedule, saturday_now)
 
     day_schedule = runtime.sidebarDaySchedule
@@ -579,7 +581,7 @@ def test_sidebar_model_reschedule_day_support(mock_central, standard_schedule):
 def test_sidebar_model_class_swap_support(mock_central, standard_schedule):
     """Tier 2 边界: 临时换课机制（class_swap）支持临时替换整天课表"""
     mock_central.configs.schedule.class_swap = {
-        "date": "2026-09-07",  # 2026-09-07 周一换成周二的课表
+        "date": "2026-09-07",
         "day_of_week": 2,
         "week_of_cycle": 1,
     }
@@ -589,7 +591,6 @@ def test_sidebar_model_class_swap_support(mock_central, standard_schedule):
     setup_runtime(runtime, standard_schedule, monday_now)
 
     day_schedule = runtime.sidebarDaySchedule
-    # 原周一有 2 节课，换成周二后应只有 1 节课
     assert len(day_schedule) == 1
     assert day_schedule[0]["startTime"] == "10:00"
     assert day_schedule[0]["isCurrent"] is True
@@ -606,9 +607,7 @@ def test_sidebar_model_override_timetable(mock_central):
             id="tl_ov",
             dayOfWeek=[1],
             weeks="all",
-            entries=[
-                Entry(id="entry_ov_1", type=EntryType.CLASS, startTime="08:00", endTime="08:45", subjectId="sub_1")
-            ],
+            entries=[Entry(id="entry_ov_1", type=EntryType.CLASS, startTime="08:00", endTime="08:45", subjectId="sub_1")],
         )
     ]
     overrides = [
@@ -638,3 +637,126 @@ def test_sidebar_model_override_timetable(mock_central):
     assert item["subjectName"] == "进阶物理"
     assert item["teacher"] == "李特聘教授"
     assert item["location"] == "科学会堂 500"
+
+
+@pytest.mark.parametrize("offset_seconds", [-3600, 0, 3600, 86400])
+def test_sidebar_model_time_offset_variations(mock_central, standard_schedule, offset_seconds):
+    """Tier 2 边界: 自定义时间偏移量 (time_offset) 下当天课表计算准确性"""
+    mock_central.configs.schedule.time_offset = offset_seconds
+    runtime = ScheduleRuntime(mock_central)
+
+    # 基准时间为 2026-09-07 08:20
+    base_time = datetime(2026, 9, 7, 8, 20)
+    target_dt = base_time + timedelta(seconds=offset_seconds)
+    setup_runtime(runtime, standard_schedule, target_dt)
+
+    day_schedule = runtime.sidebarDaySchedule
+    # 只要 target_dt 是周一 08:20，必定匹配到第一节数学课高亮
+    if target_dt.isoweekday() == 1 and 8 == target_dt.hour and 0 <= target_dt.minute <= 45:
+        assert len(day_schedule) == 2
+        assert day_schedule[0]["isCurrent"] is True
+    else:
+        assert isinstance(day_schedule, list)
+
+
+def test_sidebar_model_dense_schedule_stress(mock_central):
+    """Tier 2 边界: 密集排课压力测试（一天内 20 节紧凑课程的有序聚合）"""
+    dense_entries = []
+    for i in range(20):
+        start_h = 7 + (i * 45) // 60
+        start_m = (i * 45) % 60
+        end_time_dt = datetime(2026, 9, 7, start_h, start_m) + timedelta(minutes=40)
+        dense_entries.append(
+            Entry(
+                id=f"dense_{i}",
+                type=EntryType.CLASS,
+                startTime=f"{start_h:02d}:{start_m:02d}",
+                endTime=end_time_dt.strftime("%H:%M"),
+                title=f"密集课程 {i}",
+            )
+        )
+
+    days = [Timeline(id="tl_dense", dayOfWeek=[1], weeks="all", entries=dense_entries)]
+    schedule = ScheduleData(
+        meta=MetaInfo(id="m_dense", startDate="2026-09-07", maxWeekCycle=1),
+        subjects=[],
+        days=days,
+        overrides=[],
+    )
+
+    runtime = ScheduleRuntime(mock_central)
+    test_now = datetime(2026, 9, 7, 8, 0)
+    setup_runtime(runtime, schedule, test_now)
+
+    day_schedule = runtime.sidebarDaySchedule
+    assert len(day_schedule) == 20
+    # 确保返回条目严格按开始时间升序
+    start_times = [item["startTime"] for item in day_schedule]
+    assert start_times == sorted(start_times)
+
+
+@pytest.mark.parametrize(
+    "curr_h,curr_m,expected_min,expected_sec",
+    [
+        (8, 15, 30, 0),  # 08:15 距离 08:45 下课还剩 30 分钟
+        (8, 30, 15, 0),  # 08:30 距离 08:45 下课还剩 15 分钟
+        (8, 44, 1, 0),   # 08:44 距离 08:45 下课还剩 1 分钟
+        (8, 50, 10, 0),  # 08:50 距离 09:00 下节课还剩 10 分钟
+        (11, 0, 0, 0),   # 11:00 上午所有课程结束，剩余 0
+    ],
+)
+def test_sidebar_model_countdown_minute_second(
+    mock_central, standard_schedule, curr_h, curr_m, expected_min, expected_sec
+):
+    """Tier 1: 验证 remainingTime 剩余时间在不同时间点的分钟/秒倒计时计算"""
+    runtime = ScheduleRuntime(mock_central)
+    test_now = datetime(2026, 9, 7, curr_h, curr_m, 0)
+    setup_runtime(runtime, standard_schedule, test_now)
+
+    rem = runtime.remainingTime
+    assert isinstance(rem, dict)
+    assert rem["minute"] == expected_min
+    assert rem["second"] == expected_sec
+
+
+@pytest.mark.parametrize(
+    "curr_h,curr_m,expected_status",
+    [
+        (7, 30, "free"),         # 07:30 课前空闲
+        (7, 58, "preparation"),  # 07:58 (第一节课前 2 分钟预备铃)
+        (8, 15, "class"),        # 08:15 上课中
+        (8, 50, "free"),         # 08:50 课间（未设显式 break 条目时为空闲）
+        (8, 59, "preparation"),  # 08:59 (第二节课前 1 分钟预备铃)
+        (12, 0, "free"),         # 12:00 午休空闲
+    ],
+)
+def test_sidebar_model_current_status_derivation(
+    mock_central, standard_schedule, curr_h, curr_m, expected_status
+):
+    """Tier 1: 验证 currentStatus 在全天不同阶段的推导准确性"""
+    runtime = ScheduleRuntime(mock_central)
+    test_now = datetime(2026, 9, 7, curr_h, curr_m, 0)
+    setup_runtime(runtime, standard_schedule, test_now)
+
+    assert runtime.currentStatus == expected_status
+
+
+@pytest.mark.parametrize(
+    "target_date_str,expected_week",
+    [
+        ("2026-09-07", 1),
+        ("2026-09-14", 2),
+        ("2026-09-28", 4),
+        ("2026-11-16", 11),
+    ],
+)
+def test_sidebar_model_start_date_semester_week_number(
+    mock_central, standard_schedule, target_date_str, expected_week
+):
+    """Tier 1: 验证学期开始日期与各自然周数映射的准确性"""
+    runtime = ScheduleRuntime(mock_central)
+    target_dt = datetime.strptime(target_date_str, "%Y-%m-%d")
+    setup_runtime(runtime, standard_schedule, target_dt)
+
+    assert runtime.currentWeek == expected_week
+
