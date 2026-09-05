@@ -9,9 +9,9 @@ import ClassWidgets.Easing
 Item {
     id: weeklyPanelRoot
 
-    // 尺寸设定 (适配大部分屏幕分辨率 1366~2560)
-    width: Math.min(parent ? parent.width * 0.85 : 840, 840)
-    height: Math.min(parent ? parent.height * 0.82 : 620, 620)
+    // 尺寸设定 (适配屏幕分辨率 1366~3840，提供充裕纵向空间以实现全天课程无滚动全览)
+    width: Math.min(parent ? parent.width * 0.90 : 920, 920)
+    height: Math.min(parent ? parent.height * 0.88 : 720, 720)
 
     // 展开状态与控制
     property bool isExpanded: false
@@ -197,14 +197,14 @@ Item {
 
                     ColumnLayout {
                         anchors.fill: parent
-                        anchors.margins: 6
-                        spacing: 6
+                        anchors.margins: 4
+                        spacing: 4
 
                         // 星期标头
                         Rectangle {
                             Layout.fillWidth: true
-                            Layout.preferredHeight: 28
-                            radius: 8
+                            Layout.preferredHeight: 26
+                            radius: 7
                             color: dayColumnRect.isToday
                                 ? (Theme.accentColor || "#4A90E2")
                                 : (Theme.isDark() ? Qt.alpha("#FFFFFF", 0.06) : Qt.alpha("#000000", 0.05))
@@ -215,7 +215,7 @@ Item {
 
                                 Text {
                                     text: ["周一", "周二", "周三", "周四", "周五", "周六", "周日"][index]
-                                    font.pixelSize: 12
+                                    font.pixelSize: 11.5
                                     font.bold: dayColumnRect.isToday
                                     color: dayColumnRect.isToday
                                         ? "#FFFFFF"
@@ -232,13 +232,13 @@ Item {
                             }
                         }
 
-                        // 该天课程列表
+                        // 该天课程列表 (单卡紧凑38px设计，全天9~12节课无需滚动直接完全显示)
                         ListView {
                             id: dayEntriesList
                             Layout.fillWidth: true
                             Layout.fillHeight: true
                             clip: true
-                            spacing: 5
+                            spacing: 4
                             boundsBehavior: Flickable.StopAtBounds
 
                             model: dayColumnRect.dayEntries
@@ -260,8 +260,8 @@ Item {
 
                             delegate: Rectangle {
                                 width: dayEntriesList.width
-                                height: 50
-                                radius: 8
+                                height: 38
+                                radius: 7
 
                                 readonly property bool isCurrent: modelData.isCurrent || false
                                 readonly property color itemColor: modelData.color || "#4A90E2"
@@ -284,9 +284,23 @@ Item {
                                     hoverEnabled: true
                                 }
 
+                                // 左侧色彩标记条
+                                Rectangle {
+                                    anchors.left: parent.left
+                                    anchors.leftMargin: 3
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    width: 2.5
+                                    height: 18
+                                    radius: 1.25
+                                    color: itemColor
+                                }
+
                                 ColumnLayout {
                                     anchors.fill: parent
-                                    anchors.margins: 4
+                                    anchors.leftMargin: 9
+                                    anchors.rightMargin: 4
+                                    anchors.topMargin: 2
+                                    anchors.bottomMargin: 2
                                     spacing: 1
 
                                     Text {
@@ -302,18 +316,12 @@ Item {
 
                                     Text {
                                         Layout.fillWidth: true
-                                        text: modelData.timeRange || ""
-                                        font.pixelSize: 9
+                                        text: modelData.timeRange + ((modelData.location && modelData.location !== "") ? (" · " + modelData.location) : "")
+                                        font.pixelSize: 8.5
                                         elide: Text.ElideRight
-                                        color: Theme.isDark() ? "#999999" : "#666666"
-                                    }
-
-                                    Text {
-                                        Layout.fillWidth: true
-                                        text: modelData.location || ""
-                                        font.pixelSize: 9
-                                        elide: Text.ElideRight
-                                        color: Theme.isDark() ? "#888888" : "#888888"
+                                        color: isCurrent
+                                            ? (Theme.isDark() ? "#D8D8D8" : "#444444")
+                                            : (Theme.isDark() ? "#8C8C8C" : "#767676")
                                     }
                                 }
                             }

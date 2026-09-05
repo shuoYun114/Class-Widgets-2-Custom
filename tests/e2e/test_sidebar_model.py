@@ -760,3 +760,84 @@ def test_sidebar_model_start_date_semester_week_number(
 
     assert runtime.currentWeek == expected_week
 
+
+def test_sidebar_model_caching_and_identity_stability(mock_central, standard_schedule):
+    """
+    回归测试: 验证 sidebarDaySchedule 与 sidebarWeekSchedule 的智能缓存机制。
+    在同一分钟且当前节次不变的情况下，重复访问应返回同一缓存对象，
+    杜绝秒级重构导致的巨量 QML 对象创建与掉帧。
+    """
+    runtime = ScheduleRuntime(mock_central)
+    test_now = datetime(2026, 9, 7, 8, 20, 0)
+    setup_runtime(runtime, standard_schedule, test_now)
+
+    day1 = runtime.sidebarDaySchedule
+    day2 = runtime.sidebarDaySchedule
+    assert day1 is day2, "同一分钟内连续访问 sidebarDaySchedule 必须命中内存缓存！"
+
+    week1 = runtime.sidebarWeekSchedule
+    week2 = runtime.sidebarWeekSchedule
+    assert week1 is week2, "当前节次不变时连续访问 sidebarWeekSchedule 必须命中内存缓存！"
+
+    # 当切换当前节次时，缓存自动失效并刷新
+    test_now_next = datetime(2026, 9, 7, 9, 15, 0) # 进入第2节课
+    setup_runtime(runtime, standard_schedule, test_now_next)
+    day3 = runtime.sidebarDaySchedule
+    assert day3[1]["isCurrent"] is True
+    assert day3[0]["isCurrent"] is False
+
+
+def test_sidebar_many_entries_full_day_no_overflow_data(mock_central):
+    """
+    回归测试: 验证当全天拥有 9 到 12 节密集课程（如晚补、早自习、班会等）时，
+    侧边栏数据与全周课表矩阵能够完整无误聚合所有课程项，无丢失无截断。
+    """
+    from src.core.schedule.model import ScheduleData, MetaInfo, Timeline, Entry, EntryType, Subject
+
+    many_entries = []
+    # 模拟从 07:30 到 21:00 共 10 节课
+    for i in range(1, 11):
+        s_hour = 7 + i
+        e_hour = s_hour + 1
+        many_entries.append(
+            Entry(
+                id=f"entry_{i}",
+                startTime=f"{s_hour:02d}:00",
+                endTime=f"{s_hour:02d}:45",
+                type=EntryType.CLASS,
+                subjectId="sub_math" if i % 2 == 1 else "sub_phys",
+                title=f"第{i}节" if i <= 8 else ("晚补" if i == 9 else "晚自习"),
+            )
+        )
+
+    timeline = Timeline(id="tl_many", dayOfWeek=[1], weeks="all", entries=many_entries)
+    schedule = ScheduleData(
+        meta=MetaInfo(
+            id="meta_dense",
+            name="密集课程表",
+            version="1.0",
+            startDate="2026-09-07",
+            maxWeekCycle=1,
+            timeTableMode=0,
+            classesPerDay=10,
+        ),
+        subjects=[
+            Subject(id="sub_math", name="数学", color="#4A90E2"),
+            Subject(id="sub_phys", name="物理", color="#E67E22"),
+        ],
+        days=[timeline],
+    )
+
+    runtime = ScheduleRuntime(mock_central)
+    test_now = datetime(2026, 9, 7, 8, 30, 0)
+    setup_runtime(runtime, schedule, test_now)
+
+    day_schedule = runtime.sidebarDaySchedule
+    assert len(day_schedule) == 10
+    assert day_schedule[8]["title"] == "晚补"
+    assert day_schedule[9]["title"] == "晚自习"
+
+    week_schedule = runtime.sidebarWeekSchedule
+    assert len(week_schedule["days"]["1"]) == 10
+
+

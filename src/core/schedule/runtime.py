@@ -17,6 +17,7 @@ if TYPE_CHECKING:
 class ScheduleRuntime(QObject):
     updated = Signal()  # 文件更新
     currentsChanged = Signal(EntryType)  # 日程更新
+    sidebarScheduleChanged = Signal()  # 侧边栏课表聚合数据变更 (仅节次切换、跨天或课表修改时触发)
 
     def __init__(self, app_central: "AppCentral"):
         super().__init__()
@@ -49,6 +50,15 @@ class ScheduleRuntime(QObject):
 
         self.current_subject: Optional[Subject] = None
         self.current_title: Optional[str] = None
+
+        # 侧边栏高性能惰性缓存状态
+        self._cached_day_schedule: Optional[list[dict]] = None
+        self._cached_week_schedule: Optional[dict] = None
+        self._last_day_calc_date: Optional[date] = None
+        self._last_day_entry_id: Optional[str] = None
+        self._last_day_minute: Optional[int] = None
+        self._last_week_calc_date: Optional[date] = None
+        self._last_week_entry_id: Optional[str] = None
 
         # Separate notification providers for different notification types
         self.class_notification_provider: Optional[NotificationProvider] = None
@@ -299,8 +309,8 @@ class ScheduleRuntime(QObject):
             "type": entry_type,
         }
 
-    # SIDEBAR SCHEDULE
-    @Property(list, notify=updated)
+    # SIDEBAR SCHEDULE (带高性能惰性缓存，彻底杜绝秒级重算与 GC 丢帧)
+    @Property(list, notify=sidebarScheduleChanged)
     def sidebarDaySchedule(self) -> list[dict]:
         """
         R1: 右侧边缘当天课表扁平数据列表，包含起止时间范围、教室、教师、主题色、当前课程高亮标记与进度。
@@ -309,33 +319,61 @@ class ScheduleRuntime(QObject):
             return []
 
         now = self.current_offset_time
-        entries = self.services.get_all_entries(self.current_day)
         curr_id = self.current_entry.id if self.current_entry else None
+        current_date = now.date()
+        current_minute = now.minute
 
-        return [
-            self._format_sidebar_entry(entry, now.date(), now, curr_id)
+        # 缓存有效性验证：同一日期、同一当前节次且同一分钟内直接复用，杜绝频繁对象实例化
+        if (
+            self._cached_day_schedule is not None
+            and self._last_day_calc_date == current_date
+            and self._last_day_entry_id == curr_id
+            and self._last_day_minute == current_minute
+        ):
+            return self._cached_day_schedule
+
+        entries = self.services.get_all_entries(self.current_day)
+        result = [
+            self._format_sidebar_entry(entry, current_date, now, curr_id)
             for entry in entries
         ]
+        self._cached_day_schedule = result
+        self._last_day_calc_date = current_date
+        self._last_day_entry_id = curr_id
+        self._last_day_minute = current_minute
+        return result
 
-    @Property(dict, notify=updated)
+    @Property(dict, notify=sidebarScheduleChanged)
     def sidebarWeekSchedule(self) -> dict:
         """
         R3: 全周课表 7 天网格矩阵聚合数据，以 1-7 为键映射周一至周日全量课程列表。
+        使用高密度缓存：全周结构仅在日期变更或节次切换时更新，不再每秒重构7天全量对象。
         """
         now = self.current_offset_time
         curr_weekday = self.current_day_of_week or now.isoweekday()
         today_date = now.date()
+        curr_id = self.current_entry.id if self.current_entry else None
+
+        if (
+            self._cached_week_schedule is not None
+            and self._last_week_calc_date == today_date
+            and self._last_week_entry_id == curr_id
+        ):
+            return self._cached_week_schedule
 
         days_data = {}
         if not self.schedule:
             for day_idx in range(1, 8):
                 days_data[str(day_idx)] = []
-            return {
+            res = {
                 "currentDayOfWeek": curr_weekday,
                 "days": days_data,
             }
+            self._cached_week_schedule = res
+            self._last_week_calc_date = today_date
+            self._last_week_entry_id = curr_id
+            return res
 
-        curr_id = self.current_entry.id if self.current_entry else None
         monday_date = today_date - timedelta(days=curr_weekday - 1)
 
         for day_idx in range(1, 8):
@@ -352,10 +390,14 @@ class ScheduleRuntime(QObject):
                 for entry in entries
             ]
 
-        return {
+        res = {
             "currentDayOfWeek": curr_weekday,
             "days": days_data,
         }
+        self._cached_week_schedule = res
+        self._last_week_calc_date = today_date
+        self._last_week_entry_id = curr_id
+        return res
 
     def refresh(self, schedule: Optional[ScheduleData] = None) -> None:
         self._refresh_timer.stop()
@@ -363,9 +405,24 @@ class ScheduleRuntime(QObject):
             if self.schedule is None:
                 return
             schedule = self.schedule
+
+        prev_entry = self.current_entry
+        prev_date = self.current_offset_time.date() if self.current_offset_time else None
+
         self._update_schedule(schedule)
         self._update_time()
         self._update_notify()
+
+        # 检查是否发生节次切换、跨天或外部注入新课表
+        entry_changed = (prev_entry != self.current_entry)
+        date_changed = (prev_date != self.current_offset_time.date())
+        schedule_reloaded = (schedule is not None and schedule is not self.schedule)
+
+        if entry_changed or date_changed or schedule_reloaded:
+            self._cached_day_schedule = None
+            self._cached_week_schedule = None
+            self.sidebarScheduleChanged.emit()
+
         self.updated.emit()
 
     def schedule_refresh(self, schedule: ScheduleData) -> None:

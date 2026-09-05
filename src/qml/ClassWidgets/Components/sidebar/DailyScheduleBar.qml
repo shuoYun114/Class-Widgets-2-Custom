@@ -11,7 +11,11 @@ Item {
 
     // 默认宽度与外层约束
     width: 160
-    height: Math.min(parent ? parent.height * 0.78 : 600, Math.max(280, contentLayout.implicitHeight + 36))
+    readonly property int courseCount: scheduleListView.count
+    readonly property real listTotalHeight: Math.max(1, courseCount) * 42 + Math.max(0, courseCount - 1) * 4
+    readonly property real headerTotalHeight: 72 // 顶部栏(32)+分割线(1)+外边距(24)+间距(15)
+    readonly property real idealTotalHeight: courseCount === 0 ? 180 : (headerTotalHeight + listTotalHeight)
+    height: Math.min(parent ? parent.height * 0.85 : 680, Math.max(200, idealTotalHeight))
 
     // 状态与向外暴露属性
     property bool barHovered: barMouseArea.containsMouse || bubbleMouseArea.containsMouse
@@ -116,7 +120,7 @@ Item {
             Layout.fillWidth: true
             Layout.fillHeight: true
             clip: true
-            spacing: 6
+            spacing: 4
             boundsBehavior: Flickable.StopAtBounds
 
             model: AppCentral.scheduleRuntime ? AppCentral.scheduleRuntime.sidebarDaySchedule : []
@@ -150,7 +154,7 @@ Item {
             delegate: Item {
                 id: entryDelegate
                 width: scheduleListView.width
-                height: 52
+                height: 42
 
                 readonly property bool isCurrent: modelData.isCurrent || false
                 readonly property color itemColor: modelData.color || "#4A90E2"
@@ -179,7 +183,7 @@ Item {
                 // 卡片本体背景
                 Rectangle {
                     anchors.fill: parent
-                    radius: 10
+                    radius: 8
                     color: {
                         if (isCurrent) {
                             return Theme.isDark() ? Qt.alpha(itemColor, 0.24) : Qt.alpha(itemColor, 0.16);
@@ -199,22 +203,22 @@ Item {
                     // 左侧色彩标记条
                     Rectangle {
                         anchors.left: parent.left
-                        anchors.leftMargin: 4
+                        anchors.leftMargin: 3.5
                         anchors.verticalCenter: parent.verticalCenter
-                        width: 3.5
-                        height: 24
-                        radius: 2
+                        width: 3
+                        height: 20
+                        radius: 1.5
                         color: itemColor
                     }
 
                     // 文本内容
                     ColumnLayout {
                         anchors.fill: parent
-                        anchors.leftMargin: 14
-                        anchors.rightMargin: 8
-                        anchors.topMargin: 6
-                        anchors.bottomMargin: 6
-                        spacing: 2
+                        anchors.leftMargin: 12
+                        anchors.rightMargin: 6
+                        anchors.topMargin: 4
+                        anchors.bottomMargin: 4
+                        spacing: 1
 
                         RowLayout {
                             Layout.fillWidth: true
@@ -223,7 +227,7 @@ Item {
                             Text {
                                 Layout.fillWidth: true
                                 text: modelData.subjectName || modelData.title || "课程"
-                                font.pixelSize: 12
+                                font.pixelSize: 11.5
                                 font.bold: isCurrent
                                 elide: Text.ElideRight
                                 color: isCurrent ? (Theme.isDark() ? "#FFFFFF" : itemColor) : (Theme.isDark() ? "#EDEDED" : "#1A1A1A")
@@ -232,16 +236,16 @@ Item {
                             // 当前课程指示小红点或徽标
                             Rectangle {
                                 visible: isCurrent
-                                width: 6
-                                height: 6
-                                radius: 3
+                                width: 5
+                                height: 5
+                                radius: 2.5
                                 color: itemColor
                             }
                         }
 
                         Text {
                             text: modelData.timeRange || (modelData.startTime + " - " + modelData.endTime)
-                            font.pixelSize: 10
+                            font.pixelSize: 9.5
                             color: isCurrent ? (Theme.isDark() ? "#D0D0D0" : "#444444") : (Theme.isDark() ? "#8C8C8C" : "#767676")
                         }
                     }
