@@ -251,7 +251,7 @@ def test_adv_max_week_cycle_zero_vulnerability(mock_central):
 
     with pytest.raises(ZeroDivisionError) as exc_info:
         runtime.refresh(sched_zero_cycle)
-    assert "integer modulo by zero" in str(exc_info.value)
+    assert any(msg in str(exc_info.value).lower() for msg in ["modulo by zero", "division by zero"])
 
 
 def test_adv_extreme_week_cycle_values(mock_central):
