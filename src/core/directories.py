@@ -1,12 +1,17 @@
+import sys
 from pathlib import Path
 
 from PySide6.QtCore import QObject, Slot
 
 # Define paths
-SRC_PATH = Path(__file__).parents[1]
-ROOT_PATH = SRC_PATH.parent
+if getattr(sys, "frozen", False):
+    ROOT_PATH = Path(sys.executable).parent
+    SRC_PATH = ROOT_PATH / "src"
+else:
+    SRC_PATH = Path(__file__).parents[1]
+    ROOT_PATH = SRC_PATH.parent
 
-ASSETS_PATH = SRC_PATH.parent / "assets"
+ASSETS_PATH = ROOT_PATH / "assets"
 QML_PATH = SRC_PATH / "qml"
 CW_PATH = QML_PATH / "ClassWidgets"
 DEFAULT_THEME = QML_PATH
