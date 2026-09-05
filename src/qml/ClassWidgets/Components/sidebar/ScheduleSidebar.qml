@@ -196,14 +196,12 @@ Item {
     }
 
     // ==========================================
-    // R4: 贴边呼出微胶囊
+    // R4: 贴边呼出微胶囊 (显式坐标定位，彻底杜绝动态锚点冲突拉伸)
     // ==========================================
     EdgeRestoreCapsule {
         id: edgeCapsule
-        anchors.right: sidebarRoot.isLeftEdge ? undefined : parent.right
-        anchors.left: sidebarRoot.isLeftEdge ? parent.left : undefined
-        anchors.verticalCenter: parent.verticalCenter
-        anchors.verticalCenterOffset: sidebarRoot.sidebarOffsetY
+        x: sidebarRoot.isLeftEdge ? 0 : Math.max(0, sidebarRoot.width - width)
+        y: Math.max(0, (sidebarRoot.height - height) / 2 + sidebarRoot.sidebarOffsetY)
         isLeftEdge: sidebarRoot.isLeftEdge
         cornerRadius: Math.min(12, sidebarRoot.effectiveCornerRadius / 2)
         bgOpacity: sidebarRoot.effectiveOpacity
@@ -216,16 +214,12 @@ Item {
     }
 
     // ==========================================
-    // R1: 当天课表竖条胶囊主体
+    // R1: 当天课表竖条胶囊主体 (显式坐标定位，绝对宽度160px，绝不拉伸为横条)
     // ==========================================
     DailyScheduleBar {
         id: dailyBar
-        anchors.right: sidebarRoot.isLeftEdge ? undefined : parent.right
-        anchors.rightMargin: sidebarRoot.isLeftEdge ? 0 : 8
-        anchors.left: sidebarRoot.isLeftEdge ? parent.left : undefined
-        anchors.leftMargin: sidebarRoot.isLeftEdge ? 8 : 0
-        anchors.verticalCenter: parent.verticalCenter
-        anchors.verticalCenterOffset: sidebarRoot.sidebarOffsetY
+        x: sidebarRoot.isLeftEdge ? 8 : Math.max(0, sidebarRoot.width - width - 8)
+        y: Math.max(0, (sidebarRoot.height - height) / 2 + sidebarRoot.sidebarOffsetY)
         isLeftEdge: sidebarRoot.isLeftEdge
         cornerRadius: sidebarRoot.effectiveCornerRadius
         bgOpacity: sidebarRoot.effectiveOpacity
@@ -242,9 +236,8 @@ Item {
     // 靠近竖条一侧时的鼠标感应扩展区 (触发双按钮滑出)
     MouseArea {
         id: hoverTriggerArea
-        anchors.right: sidebarRoot.isLeftEdge ? undefined : dailyBar.left
-        anchors.left: sidebarRoot.isLeftEdge ? dailyBar.right : undefined
-        anchors.verticalCenter: dailyBar.verticalCenter
+        x: sidebarRoot.isLeftEdge ? (dailyBar.x + dailyBar.width) : Math.max(0, dailyBar.x - width)
+        y: dailyBar.y
         width: 32
         height: dailyBar.height
         hoverEnabled: true
@@ -262,15 +255,12 @@ Item {
     }
 
     // ==========================================
-    // R2: 悬浮双按钮交互组件
+    // R2: 悬浮双按钮交互组件 (显式坐标跟随 dailyBar)
     // ==========================================
     SidebarHoverButtons {
         id: hoverButtons
-        anchors.right: sidebarRoot.isLeftEdge ? undefined : dailyBar.left
-        anchors.rightMargin: sidebarRoot.isLeftEdge ? 0 : 10
-        anchors.left: sidebarRoot.isLeftEdge ? dailyBar.right : undefined
-        anchors.leftMargin: sidebarRoot.isLeftEdge ? 10 : 0
-        anchors.verticalCenter: dailyBar.verticalCenter
+        x: sidebarRoot.isLeftEdge ? (dailyBar.x + dailyBar.width + 10) : Math.max(0, dailyBar.x - width - 10)
+        y: dailyBar.y + (dailyBar.height - height) / 2
         isLeftEdge: sidebarRoot.isLeftEdge
         cornerRadius: Math.min(21, sidebarRoot.effectiveCornerRadius)
         bgOpacity: sidebarRoot.effectiveOpacity
@@ -287,16 +277,12 @@ Item {
     }
 
     // ==========================================
-    // R3: 全周课表网格大面板
+    // R3: 全周课表网格大面板 (显式坐标定位)
     // ==========================================
     WeeklySchedulePanel {
         id: weeklyPanel
-        anchors.right: sidebarRoot.isLeftEdge ? undefined : parent.right
-        anchors.rightMargin: sidebarRoot.isLeftEdge ? 0 : 24
-        anchors.left: sidebarRoot.isLeftEdge ? parent.left : undefined
-        anchors.leftMargin: sidebarRoot.isLeftEdge ? 24 : 0
-        anchors.verticalCenter: parent.verticalCenter
-        anchors.verticalCenterOffset: sidebarRoot.sidebarOffsetY
+        x: sidebarRoot.isLeftEdge ? 24 : Math.max(0, sidebarRoot.width - width - 24)
+        y: Math.max(0, (sidebarRoot.height - height) / 2 + sidebarRoot.sidebarOffsetY)
         isLeftEdge: sidebarRoot.isLeftEdge
         cornerRadius: sidebarRoot.effectiveCornerRadius
         bgOpacity: sidebarRoot.effectiveOpacity

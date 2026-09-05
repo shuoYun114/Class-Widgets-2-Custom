@@ -80,6 +80,15 @@ FluentPage {
                 ? "以屏幕垂直居中为基准微调上下高度偏移量（范围 -500px ~ +500px）"
                 : qsTr("Adjust vertical center position of the schedule sidebar (-500px to +500px)")
 
+            Timer {
+                id: offsetYCommitTimer
+                interval: 80
+                repeat: false
+                onTriggered: {
+                    Configs.set("preferences.schedule_sidebar_offset_y", offsetYSpinBox.value);
+                }
+            }
+
             SpinBox {
                 id: offsetYSpinBox
                 Layout.preferredWidth: 160
@@ -89,7 +98,7 @@ FluentPage {
                 enabled: !Configs.isKeyLocked("preferences.schedule_sidebar_offset_y")
                 onValueChanged: {
                     if (focus) {
-                        Configs.set("preferences.schedule_sidebar_offset_y", value);
+                        offsetYCommitTimer.restart();
                     }
                 }
                 Component.onCompleted: {
@@ -143,6 +152,15 @@ FluentPage {
                 ? "设置侧边栏及卡片的圆角弧度（范围 0 ~ 50 像素）"
                 : qsTr("Set the corner radius of the schedule sidebar (0px to 50px)")
 
+            Timer {
+                id: cornerRadiusCommitTimer
+                interval: 60
+                repeat: false
+                onTriggered: {
+                    Configs.set("preferences.schedule_sidebar_corner_radius", cornerRadiusSlider.value);
+                }
+            }
+
             Slider {
                 id: cornerRadiusSlider
                 from: 0
@@ -155,7 +173,7 @@ FluentPage {
                 enabled: !Configs.isKeyLocked("preferences.schedule_sidebar_corner_radius")
                 onValueChanged: {
                     if (pressed) {
-                        Configs.set("preferences.schedule_sidebar_corner_radius", value)
+                        cornerRadiusCommitTimer.restart();
                     }
                 }
                 Component.onCompleted: {
@@ -175,6 +193,15 @@ FluentPage {
                 ? "调节侧边课表栏背景材质不透明度（范围 10% ~ 100%）"
                 : qsTr("Change the background opacity of the schedule sidebar (10% to 100%)")
 
+            Timer {
+                id: opacityCommitTimer
+                interval: 60
+                repeat: false
+                onTriggered: {
+                    Configs.set("preferences.schedule_sidebar_opacity", opacitySlider.value);
+                }
+            }
+
             Slider {
                 id: opacitySlider
                 from: 0.1
@@ -187,7 +214,7 @@ FluentPage {
                 enabled: !Configs.isKeyLocked("preferences.schedule_sidebar_opacity")
                 onValueChanged: {
                     if (pressed) {
-                        Configs.set("preferences.schedule_sidebar_opacity", value)
+                        opacityCommitTimer.restart();
                     }
                 }
                 Component.onCompleted: {
