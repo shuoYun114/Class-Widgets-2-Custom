@@ -11,7 +11,10 @@ Item {
 
     // 默认宽度与外层约束
     width: 160
-    readonly property int courseCount: scheduleListView.count
+    property var scheduleList: (AppCentral.scheduleRuntime && AppCentral.scheduleRuntime.sidebarDaySchedule)
+        ? AppCentral.scheduleRuntime.sidebarDaySchedule
+        : []
+    readonly property int courseCount: scheduleList ? scheduleList.length : 0
     readonly property real listTotalHeight: Math.max(1, courseCount) * 42 + Math.max(0, courseCount - 1) * 4
     readonly property real headerTotalHeight: 72 // 顶部栏(32)+分割线(1)+外边距(24)+间距(15)
     readonly property real idealTotalHeight: courseCount === 0 ? 180 : (headerTotalHeight + listTotalHeight)
@@ -98,8 +101,8 @@ Item {
 
                 Text {
                     text: {
-                        var scheduleList = AppCentral.scheduleRuntime ? AppCentral.scheduleRuntime.sidebarDaySchedule : [];
-                        return scheduleList.length > 0 ? (scheduleList.length + " 节") : "";
+                        var scheduleList = dailyBarRoot.scheduleList;
+                        return (scheduleList && scheduleList.length > 0) ? (scheduleList.length + " 节") : "";
                     }
                     font.pixelSize: 10
                     color: Theme.isDark() ? "#8C8C8C" : "#767676"
@@ -123,14 +126,14 @@ Item {
             spacing: 4
             boundsBehavior: Flickable.StopAtBounds
 
-            model: AppCentral.scheduleRuntime ? AppCentral.scheduleRuntime.sidebarDaySchedule : []
+            model: dailyBarRoot.scheduleList
 
             // 空课表占位提示
             Item {
                 anchors.centerIn: parent
                 width: parent.width - 16
                 height: 100
-                visible: scheduleListView.count === 0
+                visible: dailyBarRoot.courseCount === 0
 
                 ColumnLayout {
                     anchors.centerIn: parent
@@ -227,7 +230,7 @@ Item {
                             Text {
                                 Layout.fillWidth: true
                                 text: modelData.subjectName || modelData.title || "课程"
-                                font.pixelSize: 11.5
+                                font.pixelSize: 11
                                 font.bold: isCurrent
                                 elide: Text.ElideRight
                                 color: isCurrent ? (Theme.isDark() ? "#FFFFFF" : itemColor) : (Theme.isDark() ? "#EDEDED" : "#1A1A1A")
@@ -245,7 +248,7 @@ Item {
 
                         Text {
                             text: modelData.timeRange || (modelData.startTime + " - " + modelData.endTime)
-                            font.pixelSize: 9.5
+                            font.pixelSize: 10
                             color: isCurrent ? (Theme.isDark() ? "#D0D0D0" : "#444444") : (Theme.isDark() ? "#8C8C8C" : "#767676")
                         }
                     }

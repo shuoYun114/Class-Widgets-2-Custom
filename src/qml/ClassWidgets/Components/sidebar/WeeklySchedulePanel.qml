@@ -215,7 +215,7 @@ Item {
 
                                 Text {
                                     text: ["周一", "周二", "周三", "周四", "周五", "周六", "周日"][index]
-                                    font.pixelSize: 11.5
+                                    font.pixelSize: 11
                                     font.bold: dayColumnRect.isToday
                                     color: dayColumnRect.isToday
                                         ? "#FFFFFF"
@@ -317,7 +317,7 @@ Item {
                                     Text {
                                         Layout.fillWidth: true
                                         text: modelData.timeRange + ((modelData.location && modelData.location !== "") ? (" · " + modelData.location) : "")
-                                        font.pixelSize: 8.5
+                                        font.pixelSize: 9
                                         elide: Text.ElideRight
                                         color: isCurrent
                                             ? (Theme.isDark() ? "#D8D8D8" : "#444444")
