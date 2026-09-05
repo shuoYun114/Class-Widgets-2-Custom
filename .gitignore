@@ -188,3 +188,6 @@ RinUI
 
 # Reasonix
 .reasonix/
+
+# Agents
+.agents/
