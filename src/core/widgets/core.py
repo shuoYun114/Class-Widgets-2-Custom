@@ -289,11 +289,17 @@ class WidgetsWindow(ReleasableWindow, QObject):
 
             sidebar_rects = []
             rects_prop = schedule_sidebar.property("interactiveRects")
-            if rects_prop:
+            if hasattr(rects_prop, "toVariant"):
+                rects_prop = rects_prop.toVariant()
+            if isinstance(rects_prop, (list, tuple)):
                 sidebar_rects = rects_prop
             elif hasattr(schedule_sidebar, "getInteractiveRects"):
                 try:
-                    sidebar_rects = schedule_sidebar.getInteractiveRects()
+                    res = schedule_sidebar.getInteractiveRects()
+                    if hasattr(res, "toVariant"):
+                        res = res.toVariant()
+                    if isinstance(res, (list, tuple)):
+                        sidebar_rects = res
                 except Exception:
                     pass
 
@@ -315,11 +321,16 @@ class WidgetsWindow(ReleasableWindow, QObject):
                     pass
 
             for item in sidebar_rects:
-                if len(item) == 4:
-                    rx, ry, rw, rh = item
-                    if rw > 0 and rh > 0:
-                        rect = QRect(int(sb_x + rx), int(sb_y + ry), int(rw), int(rh))
-                        mask = mask.united(QRegion(rect))
+                if hasattr(item, "toVariant"):
+                    item = item.toVariant()
+                if isinstance(item, (list, tuple)) and len(item) == 4:
+                    try:
+                        rx, ry, rw, rh = map(float, item)
+                        if rw > 0 and rh > 0:
+                            rect = QRect(int(sb_x + rx), int(sb_y + ry), int(rw), int(rh))
+                            mask = mask.united(QRegion(rect))
+                    except (ValueError, TypeError):
+                        pass
 
         self.interactive_rect = mask
         if mask.isEmpty():
