@@ -426,15 +426,17 @@ FluentPage {
         spacing: 4
         Text {
             typography: Typography.BodyStrong
-            text: qsTr("Schedule Sidebar")
+            text: qsTr("Schedule Sidebar") === "Schedule Sidebar" ? "课表侧边栏" : qsTr("Schedule Sidebar")
         }
 
         SettingExpander {
             id: sidebarExpander
             Layout.fillWidth: true
             icon.name: "ic_fluent_panel_right_20_regular"
-            title: qsTr("Enable Schedule Sidebar")
-            description: qsTr("Display daily schedule capsule on the screen edge with quick actions and weekly matrix view")
+            title: qsTr("Enable Schedule Sidebar") === "Enable Schedule Sidebar" ? "启用课表侧边栏" : qsTr("Enable Schedule Sidebar")
+            description: qsTr("Display daily schedule capsule on the screen edge with quick actions and weekly matrix view") === "Display daily schedule capsule on the screen edge with quick actions and weekly matrix view"
+                ? "在屏幕边缘以贴边胶囊形式展示今日课程，支持一键查看全周课表与课程详情"
+                : qsTr("Display daily schedule capsule on the screen edge with quick actions and weekly matrix view")
             expanded: Configs.data.preferences.schedule_sidebar_enabled !== false
 
             action: Switch {

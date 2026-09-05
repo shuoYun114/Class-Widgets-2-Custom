@@ -98,18 +98,6 @@ Item {
             Layout.preferredHeight: 42
             Layout.alignment: Qt.AlignHCenter
 
-            // 阴影 (轻量级硬件缓存快速渲染)
-            DropShadow {
-                anchors.fill: btn1Bg
-                horizontalOffset: hoverButtonsRoot.isLeftEdge ? 2 : -2
-                verticalOffset: 3
-                radius: 8
-                samples: 8
-                cached: true
-                fast: true
-                color: Theme.isDark() ? Qt.alpha("#000000", 0.45) : Qt.alpha("#000000", 0.15)
-                source: btn1Bg
-            }
 
             Rectangle {
                 id: btn1Bg
@@ -190,18 +178,6 @@ Item {
             Layout.preferredHeight: 42
             Layout.alignment: Qt.AlignHCenter
 
-            // 阴影 (轻量级硬件缓存快速渲染)
-            DropShadow {
-                anchors.fill: btn2Bg
-                horizontalOffset: hoverButtonsRoot.isLeftEdge ? 2 : -2
-                verticalOffset: 3
-                radius: 8
-                samples: 8
-                cached: true
-                fast: true
-                color: Theme.isDark() ? Qt.alpha("#000000", 0.45) : Qt.alpha("#000000", 0.15)
-                source: btn2Bg
-            }
 
             Rectangle {
                 id: btn2Bg

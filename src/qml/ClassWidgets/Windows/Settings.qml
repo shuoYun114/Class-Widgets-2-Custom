@@ -48,6 +48,11 @@ FluentWindow {
             icon: "ic_fluent_apps_20_regular"
         },
         {
+            title: qsTr("Schedule Sidebar") === "Schedule Sidebar" ? "课表侧边栏" : qsTr("Schedule Sidebar"),
+            page: PathManager.qml("pages/settings/General/Sidebar.qml"),
+            icon: "ic_fluent_panel_right_20_regular"
+        },
+        {
             title: qsTr("Interactions"),
             page: PathManager.qml("pages/settings/General/Interactions.qml"),
             icon: "ic_fluent_hand_draw_20_regular"

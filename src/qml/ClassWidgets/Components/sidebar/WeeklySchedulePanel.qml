@@ -55,20 +55,7 @@ Item {
         return [retractBtnItem.x, retractBtnItem.y, retractBtnItem.width, retractBtnItem.height];
     }
 
-    // 主面板轻量级柔和阴影 (开启硬件缓存与快速渲染模式)
-    DropShadow {
-        anchors.fill: panelBackground
-        horizontalOffset: weeklyPanelRoot.isLeftEdge ? 3 : -3
-        verticalOffset: 6
-        radius: 14
-        samples: 9
-        cached: true
-        fast: true
-        color: Theme.isDark() ? Qt.alpha("#000000", 0.55) : Qt.alpha("#000000", 0.18)
-        source: panelBackground
-    }
-
-    // 主面板背景 (Fluent 磨砂胶囊)
+    // 主面板背景 (原生轻量高性能 Fluent 材质，杜绝 FBO 离屏重绘与卡顿)
     Rectangle {
         id: panelBackground
         anchors.fill: parent
@@ -76,50 +63,10 @@ Item {
         color: Theme.isDark()
             ? Qt.alpha("#1A191E", 0.95 * weeklyPanelRoot.bgOpacity)
             : Qt.alpha("#FBFBFF", 0.96 * weeklyPanelRoot.bgOpacity)
-
-        // 对齐主程序 Widget 的微光渐变高光边框
-        Item {
-            anchors.fill: parent
-            Rectangle {
-                id: panelBorderRect
-                anchors.fill: parent
-                radius: panelBackground.radius
-                layer.enabled: true
-                layer.effect: LinearGradient {
-                    start: Qt.point(0, 0)
-                    end: Qt.point(width, height)
-                    gradient: Gradient {
-                        GradientStop {
-                            position: 0.0
-                            color: Theme.isDark() ? Qt.alpha("#FFFFFF", 0.35) : Qt.alpha("#000000", 0.16)
-                        }
-                        GradientStop {
-                            position: 0.3
-                            color: Theme.isDark() ? Qt.alpha(Theme.accentColor || "#4A90E2", 0.20) : Qt.alpha("#000000", 0.04)
-                        }
-                        GradientStop {
-                            position: 0.7
-                            color: Qt.alpha("#FFFFFF", 0.0)
-                        }
-                        GradientStop {
-                            position: 1.0
-                            color: Theme.isDark() ? Qt.alpha("#FFFFFF", 0.25) : Qt.alpha("#000000", 0.10)
-                        }
-                    }
-                }
-            }
-            layer.enabled: true
-            layer.effect: OpacityMask {
-                maskSource: Rectangle {
-                    width: panelBorderRect.width
-                    height: panelBorderRect.height
-                    radius: panelBorderRect.radius
-                    color: "transparent"
-                    border.width: 1
-                }
-            }
-            opacity: Math.min(1.0, weeklyPanelRoot.bgOpacity * 1.2)
-        }
+        border.width: 1
+        border.color: Theme.isDark()
+            ? Qt.alpha("#FFFFFF", 0.18)
+            : Qt.alpha("#000000", 0.10)
     }
 
     // 拦截点击避免穿透到背景外部收回区域

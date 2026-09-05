@@ -33,71 +33,18 @@ Item {
         return [bubbleCard.x, bubbleCard.y, bubbleCard.width, bubbleCard.height];
     }
 
-    // 主体阴影 (轻量级硬件缓存快速渲染)
-    DropShadow {
-        anchors.fill: capsuleBackground
-        horizontalOffset: dailyBarRoot.isLeftEdge ? 2 : -2
-        verticalOffset: 4
-        radius: 12
-        samples: 8
-        cached: true
-        fast: true
-        color: Theme.isDark() ? Qt.alpha("#000000", 0.50) : Qt.alpha("#000000", 0.16)
-        source: capsuleBackground
-    }
-
-    // 竖条胶囊背景
+    // 竖条胶囊背景 (原生轻量高性能 Fluent 材质，杜绝 DropShadow 造成的离屏模糊与 DWM 掉帧)
     Rectangle {
         id: capsuleBackground
         anchors.fill: parent
         radius: dailyBarRoot.cornerRadius
         color: Theme.isDark()
-            ? Qt.alpha("#1C1B20", 0.86 * dailyBarRoot.bgOpacity)
+            ? Qt.alpha("#1C1B20", 0.90 * dailyBarRoot.bgOpacity)
             : Qt.alpha("#FCFBFF", 0.94 * dailyBarRoot.bgOpacity)
-
-        // 渐变高光边框 (对齐主程序官方 Widget 质感)
-        Item {
-            anchors.fill: parent
-            Rectangle {
-                id: barBorderRect
-                anchors.fill: parent
-                radius: capsuleBackground.radius
-                layer.enabled: true
-                layer.effect: LinearGradient {
-                    start: Qt.point(0, 0)
-                    end: Qt.point(width, height)
-                    gradient: Gradient {
-                        GradientStop {
-                            position: 0.0
-                            color: Theme.isDark() ? Qt.alpha("#FFFFFF", 0.35) : Qt.alpha("#000000", 0.15)
-                        }
-                        GradientStop {
-                            position: 0.35
-                            color: Theme.isDark() ? Qt.alpha(Theme.accentColor || "#4A90E2", 0.25) : Qt.alpha("#000000", 0.05)
-                        }
-                        GradientStop {
-                            position: 0.7
-                            color: Qt.alpha("#FFFFFF", 0.0)
-                        }
-                        GradientStop {
-                            position: 1.0
-                            color: Theme.isDark() ? Qt.alpha("#FFFFFF", 0.25) : Qt.alpha("#000000", 0.10)
-                        }
-                    }
-                }
-            }
-            layer.enabled: true
-            layer.effect: OpacityMask {
-                maskSource: Rectangle {
-                    width: barBorderRect.width
-                    height: barBorderRect.height
-                    radius: barBorderRect.radius
-                    color: "transparent"
-                    border.width: 1
-                }
-            }
-            opacity: Math.min(1.0, dailyBarRoot.bgOpacity * 1.2)
-        }
+        border.width: 1
+        border.color: Theme.isDark()
+            ? Qt.alpha("#FFFFFF", 0.18)
+            : Qt.alpha("#000000", 0.10)
     }
 
     // 整体鼠标悬浮监听
@@ -364,20 +311,7 @@ Item {
             NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
         }
 
-        // 气泡卡片阴影 (轻量级硬件缓存快速渲染)
-        DropShadow {
-            anchors.fill: bubbleBg
-            horizontalOffset: dailyBarRoot.isLeftEdge ? 2 : -2
-            verticalOffset: 4
-            radius: 10
-            samples: 8
-            cached: true
-            fast: true
-            color: Theme.isDark() ? Qt.alpha("#000000", 0.50) : Qt.alpha("#000000", 0.18)
-            source: bubbleBg
-        }
-
-        // 气泡卡片背景
+        // 气泡卡片背景 (原生轻量高性能 Fluent 材质)
         Rectangle {
             id: bubbleBg
             anchors.fill: parent

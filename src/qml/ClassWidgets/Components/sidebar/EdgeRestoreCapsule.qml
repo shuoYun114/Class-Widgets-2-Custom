@@ -46,18 +46,6 @@ Item {
         }
     }
 
-    // 柔和微投影 (轻量级硬件缓存快速渲染，提升在深浅背景上的悬浮层次)
-    DropShadow {
-        anchors.fill: capsuleBg
-        horizontalOffset: edgeCapsuleRoot.isLeftEdge ? 2 : -2
-        verticalOffset: 2
-        radius: 6
-        samples: 8
-        cached: true
-        fast: true
-        color: Theme.isDark() ? Qt.alpha("#000000", 0.55) : Qt.alpha("#000000", 0.18)
-        source: capsuleBg
-    }
 
     // 贴边微药丸背景 (紧贴屏幕左/右边缘)
     Rectangle {

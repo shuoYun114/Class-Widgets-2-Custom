@@ -332,13 +332,11 @@ class WidgetsWindow(ReleasableWindow, QObject):
                     except (ValueError, TypeError):
                         pass
 
-        self.interactive_rect = mask
-        if mask.isEmpty():
-            # setMask(QRegion()) clears the native mask, which makes the
-            # full-screen transparent window cover the entire desktop. Keep a
-            # minimal non-empty mask until a widget has a valid geometry.
-            mask = QRegion(QRect(0, 0, 1, 1))
-        self.root_window.setMask(mask)
+        target_mask = mask if not mask.isEmpty() else QRegion(QRect(0, 0, 1, 1))
+        if self.interactive_rect == target_mask:
+            return
+        self.interactive_rect = target_mask
+        self.root_window.setMask(target_mask)
 
     def update_mouse_state(self):
         if not self.interactive_rect:
