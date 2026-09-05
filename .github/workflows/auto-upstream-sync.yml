@@ -1,0 +1,156 @@
+name: Auto Upstream Sync & Release (自动追随官方更新并打包)
+
+on:
+  # 每 6 小时自动巡检一次官方更新
+  schedule:
+    - cron: '0 */6 * * *'
+  # 支持手动在 GitHub 页面一键触发
+  workflow_dispatch:
+    inputs:
+      force_build:
+        description: '即使上游无新更新也强制重新打包发布 (Force Build)'
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+
+jobs:
+  sync-and-build:
+    name: 🔄 检查上游、自动合并、测试与打包发布
+    runs-on: windows-latest
+
+    steps:
+      - name: ⬇️ 检出二改分支代码
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 🔍 检查官方上游更新 (Check Upstream)
+        id: check_upstream
+        shell: pwsh
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+          # 添加上游官方仓库源
+          $upstreamUrl = "https://github.com/RinLit-233-shiroko/Class-Widgets-2.git"
+          $remotes = git remote
+          if (-not ($remotes -contains "upstream")) {
+            git remote add upstream $upstreamUrl
+          }
+          git fetch upstream main --tags
+
+          $upstreamSha = (git rev-parse upstream/main).Trim()
+          Write-Host "上游最新 Commit SHA: $upstreamSha"
+
+          # 读取上次同步基线
+          $versionFile = ".upstream_version"
+          $lastSha = ""
+          if (Test-Path $versionFile) {
+            $json = Get-Content $versionFile -Raw | ConvertFrom-Json
+            $lastSha = $json.last_synced_commit
+          }
+          Write-Host "上次已同步 Commit SHA: $lastSha"
+
+          $force = "${{ inputs.force_build }}" -eq "true"
+          $hasUpdate = ($upstreamSha -ne $lastSha)
+
+          if ($hasUpdate -or $force) {
+            Write-Host "检测到官方新更新或强制触发构建，准备合并与打包！"
+            echo "should_build=true" >> $env:GITHUB_OUTPUT
+            echo "upstream_sha=$upstreamSha" >> $env:GITHUB_OUTPUT
+          } else {
+            Write-Host "官方仓库尚无新提交，无需重复打包构建。"
+            echo "should_build=false" >> $env:GITHUB_OUTPUT
+          }
+
+      - name: 🔀 自动合并官方最新代码 (Merge Upstream)
+        if: steps.check_upstream.outputs.should_build == 'true'
+        shell: pwsh
+        run: |
+          $upstreamSha = "${{ steps.check_upstream.outputs.upstream_sha }}"
+          Write-Host "正在合并上游官方更新 ($upstreamSha) ..."
+          
+          # 执行平滑合并
+          git merge upstream/main -m "chore(upstream): 自动追随并合并官方最新代码 [$upstreamSha]"
+          
+          # 更新基线版本记录文件
+          $nowIso = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
+          $record = @{
+            upstream_repo = "RinLit-233-shiroko/Class-Widgets-2"
+            last_synced_commit = $upstreamSha
+            last_synced_at = $nowIso
+          } | ConvertTo-Json -Depth 4
+          Set-Content -Path ".upstream_version" -Value $record -Encoding UTF8
+          
+          git add .upstream_version
+          $diff = git diff --staged
+          if ($diff) {
+            git commit -m "chore(version): 记录最新上游同步基线 [$upstreamSha]"
+          }
+
+      - name: 📦 配置 Python 与 uv 环境
+        if: steps.check_upstream.outputs.should_build == 'true'
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: 📥 安装依赖与打包工具
+        if: steps.check_upstream.outputs.should_build == 'true'
+        shell: pwsh
+        run: |
+          uv sync
+          uv pip install pyinstaller
+
+      - name: 🧪 运行自动化测试门禁 (Run 157 E2E Tests)
+        if: steps.check_upstream.outputs.should_build == 'true'
+        shell: pwsh
+        run: |
+          Write-Host "正在执行全量回归与对抗测试套件..."
+          uv run pytest tests/e2e/
+
+      - name: 🔨 自动打包 Windows EXE 应用程序 (Build EXE)
+        if: steps.check_upstream.outputs.should_build == 'true'
+        shell: pwsh
+        run: |
+          Write-Host "开始执行自动化 EXE 编译打包..."
+          uv run python scripts/build_exe.py
+
+      - name: 🚀 推送合并后的最新代码到个人仓库
+        if: steps.check_upstream.outputs.should_build == 'true'
+        shell: pwsh
+        run: |
+          git push origin main
+
+      - name: 🏷️ 生成发布标签并发布 GitHub Release
+        if: steps.check_upstream.outputs.should_build == 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "Class Widgets 2 (侧边课表定制版) - 官方同步更新"
+          tag_name: "release-${{ steps.check_upstream.outputs.upstream_sha }}"
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          body: |
+            ## 🎉 自动追踪官方最新版本构建完成
+            
+            本版本已自动同步官方仓库 [RinLit-233-shiroko/Class-Widgets-2](https://github.com/RinLit-233-shiroko/Class-Widgets-2) 的最新代码。
+            
+            ### ✨ 二改特性全量内嵌：
+            - **极简胶囊当天课表竖条**：屏幕右侧边缘半透明悬浮，随时间线自动高亮当前课程。
+            - **悬浮双按钮交互**：移入自动弹出展开/收回双按钮，带 300ms 防误触缓冲。
+            - **全周网格矩阵大面板**：向左平滑展开整周所有配置课程，支持点击屏幕空白处快速收回。
+            - **贴边微型呼出胶囊**：收起后屏幕边缘常驻极简向左箭头胶囊（`‹`），点击秒级复原。
+            - **系统级 100% 桌面穿透**：无操作阻挡，多层遮罩动态收敛。
+            - **满帧 GPU 级丝滑动画**：纯硬件 Translate 平移矩阵偏移与轻量化阴影渲染。
+            - **157 项自动化测试把关**：全量通过回归验证。
+            
+            ### 📥 下载与使用：
+            下载下方的 **`ClassWidgets-2-Windows.zip`**，解压后双击 **`Class Widgets 2.exe`** 即可使用。
+          files: |
+            dist/ClassWidgets-2-Windows.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
