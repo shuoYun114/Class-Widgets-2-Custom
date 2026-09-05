@@ -19,9 +19,14 @@ Item {
         ? AppCentral.scheduleRuntime.sidebarWeekSchedule
         : { "currentDayOfWeek": 1, "days": {} }
 
+    // 自定义外观与定位属性 (由父级 ScheduleSidebar 传入)
+    property bool isLeftEdge: false
+    property real cornerRadius: 22
+    property real bgOpacity: 1.0
+
     signal requestClose()
 
-    // 进出平滑动画 (使用纯 GPU Translate 矩阵位移与淡入，杜绝昂贵的整树 scale 重采样)
+    // 进出平滑动画 (根据贴边方向镜像 Translate 矩阵位移与淡入)
     opacity: isExpanded ? 1.0 : 0.0
     visible: opacity > 0.01
 
@@ -30,7 +35,7 @@ Item {
     }
 
     transform: Translate {
-        x: weeklyPanelRoot.isExpanded ? 0 : 36
+        x: weeklyPanelRoot.isExpanded ? 0 : (weeklyPanelRoot.isLeftEdge ? -36 : 36)
         Behavior on x {
             NumberAnimation {
                 duration: 240
@@ -53,7 +58,7 @@ Item {
     // 主面板轻量级柔和阴影 (开启硬件缓存与快速渲染模式)
     DropShadow {
         anchors.fill: panelBackground
-        horizontalOffset: -3
+        horizontalOffset: weeklyPanelRoot.isLeftEdge ? 3 : -3
         verticalOffset: 6
         radius: 14
         samples: 9
@@ -67,16 +72,53 @@ Item {
     Rectangle {
         id: panelBackground
         anchors.fill: parent
-        radius: 20
-        color: Theme.isDark() ? Qt.alpha("#1A191E", 0.95) : Qt.alpha("#FBFBFF", 0.96)
+        radius: weeklyPanelRoot.cornerRadius
+        color: Theme.isDark()
+            ? Qt.alpha("#1A191E", 0.95 * weeklyPanelRoot.bgOpacity)
+            : Qt.alpha("#FBFBFF", 0.96 * weeklyPanelRoot.bgOpacity)
 
-        // 微光渐变高光边框
-        Rectangle {
+        // 对齐主程序 Widget 的微光渐变高光边框
+        Item {
             anchors.fill: parent
-            radius: parent.radius
-            color: "transparent"
-            border.width: 1
-            border.color: Theme.isDark() ? Qt.alpha("#FFFFFF", 0.25) : Qt.alpha("#000000", 0.10)
+            Rectangle {
+                id: panelBorderRect
+                anchors.fill: parent
+                radius: panelBackground.radius
+                layer.enabled: true
+                layer.effect: LinearGradient {
+                    start: Qt.point(0, 0)
+                    end: Qt.point(width, height)
+                    gradient: Gradient {
+                        GradientStop {
+                            position: 0.0
+                            color: Theme.isDark() ? Qt.alpha("#FFFFFF", 0.35) : Qt.alpha("#000000", 0.16)
+                        }
+                        GradientStop {
+                            position: 0.3
+                            color: Theme.isDark() ? Qt.alpha(Theme.accentColor || "#4A90E2", 0.20) : Qt.alpha("#000000", 0.04)
+                        }
+                        GradientStop {
+                            position: 0.7
+                            color: Qt.alpha("#FFFFFF", 0.0)
+                        }
+                        GradientStop {
+                            position: 1.0
+                            color: Theme.isDark() ? Qt.alpha("#FFFFFF", 0.25) : Qt.alpha("#000000", 0.10)
+                        }
+                    }
+                }
+            }
+            layer.enabled: true
+            layer.effect: OpacityMask {
+                maskSource: Rectangle {
+                    width: panelBorderRect.width
+                    height: panelBorderRect.height
+                    radius: panelBorderRect.radius
+                    color: "transparent"
+                    border.width: 1
+                }
+            }
+            opacity: Math.min(1.0, weeklyPanelRoot.bgOpacity * 1.2)
         }
     }
 

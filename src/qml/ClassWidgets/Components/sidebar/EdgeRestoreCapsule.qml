@@ -17,6 +17,11 @@ Item {
     property bool isHovered: capsuleMouseArea.containsMouse
     property bool isActive: false // 是否处于折叠激活态 (COLLAPSED)
 
+    // 自定义外观与定位属性 (由父级 ScheduleSidebar 传入)
+    property bool isLeftEdge: false
+    property real cornerRadius: 10
+    property real bgOpacity: 1.0
+
     signal restoreClicked()
 
     function getInteractiveRect() {
@@ -33,7 +38,9 @@ Item {
     }
 
     transform: Translate {
-        x: !edgeCapsuleRoot.isActive ? 20 : (edgeCapsuleRoot.isHovered ? -3 : 0)
+        x: !edgeCapsuleRoot.isActive
+            ? (edgeCapsuleRoot.isLeftEdge ? -20 : 20)
+            : (edgeCapsuleRoot.isHovered ? (edgeCapsuleRoot.isLeftEdge ? 3 : -3) : 0)
         Behavior on x {
             NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
         }
@@ -42,7 +49,7 @@ Item {
     // 柔和微投影 (轻量级硬件缓存快速渲染，提升在深浅背景上的悬浮层次)
     DropShadow {
         anchors.fill: capsuleBg
-        horizontalOffset: -2
+        horizontalOffset: edgeCapsuleRoot.isLeftEdge ? 2 : -2
         verticalOffset: 2
         radius: 6
         samples: 8
@@ -52,15 +59,15 @@ Item {
         source: capsuleBg
     }
 
-    // 贴边微药丸背景 (仅左侧圆角，紧贴屏幕右边缘)
+    // 贴边微药丸背景 (紧贴屏幕左/右边缘)
     Rectangle {
         id: capsuleBg
         anchors.fill: parent
-        // 左上与左下大圆角
-        topLeftRadius: 10
-        bottomLeftRadius: 10
-        topRightRadius: 0
-        bottomRightRadius: 0
+        // 贴边自适应圆角 (靠右时仅左侧圆角，靠左时仅右侧圆角)
+        topLeftRadius: edgeCapsuleRoot.isLeftEdge ? 0 : edgeCapsuleRoot.cornerRadius
+        bottomLeftRadius: edgeCapsuleRoot.isLeftEdge ? 0 : edgeCapsuleRoot.cornerRadius
+        topRightRadius: edgeCapsuleRoot.isLeftEdge ? edgeCapsuleRoot.cornerRadius : 0
+        bottomRightRadius: edgeCapsuleRoot.isLeftEdge ? edgeCapsuleRoot.cornerRadius : 0
 
         color: {
             if (capsuleMouseArea.pressed) {
@@ -69,7 +76,9 @@ Item {
             if (edgeCapsuleRoot.isHovered) {
                 return Theme.isDark() ? Qt.alpha("#35343E", 0.98) : Qt.alpha("#EBEBF2", 0.98);
             }
-            return Theme.isDark() ? Qt.alpha("#26252C", 0.95) : Qt.alpha("#F7F7FA", 0.98);
+            return Theme.isDark()
+                ? Qt.alpha("#26252C", 0.95 * edgeCapsuleRoot.bgOpacity)
+                : Qt.alpha("#F7F7FA", 0.98 * edgeCapsuleRoot.bgOpacity);
         }
 
         border.width: 1
@@ -85,11 +94,13 @@ Item {
         Behavior on color { ColorAnimation { duration: 160 } }
         Behavior on border.color { ColorAnimation { duration: 160 } }
 
-        // 胶囊内部左侧主题色拉手条 (极具辨识度，解决深色软件背景下隐形)
+        // 胶囊内部主题色拉手条 (极具辨识度，解决深色软件背景下隐形)
         Rectangle {
             id: accentBar
-            anchors.left: parent.left
-            anchors.leftMargin: 2.5
+            anchors.left: edgeCapsuleRoot.isLeftEdge ? undefined : parent.left
+            anchors.right: edgeCapsuleRoot.isLeftEdge ? parent.right : undefined
+            anchors.leftMargin: edgeCapsuleRoot.isLeftEdge ? 0 : 2.5
+            anchors.rightMargin: edgeCapsuleRoot.isLeftEdge ? 2.5 : 0
             anchors.verticalCenter: parent.verticalCenter
             width: 2.5
             height: 22
@@ -100,12 +111,12 @@ Item {
             Behavior on opacity { NumberAnimation { duration: 160 } }
         }
 
-        // "<" 向左图标指示符
+        // "<" / ">" 图标指示符 (根据贴边方位自适应指向屏幕内侧)
         Text {
             id: arrowIcon
             anchors.centerIn: parent
-            anchors.horizontalCenterOffset: 1
-            text: "‹"
+            anchors.horizontalCenterOffset: edgeCapsuleRoot.isLeftEdge ? -1 : 1
+            text: edgeCapsuleRoot.isLeftEdge ? "›" : "‹"
             font.pixelSize: 16
             font.bold: true
             color: {

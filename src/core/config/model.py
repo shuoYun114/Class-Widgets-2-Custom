@@ -190,6 +190,11 @@ class PreferencesConfig(ConfigBaseModel):
 
     schedule_sidebar_enabled: bool = True  # 侧边课表栏启用开关 (默认 True)
     schedule_sidebar_collapsed: bool = False  # 侧边栏贴边折叠状态 (默认 False)
+    schedule_sidebar_edge: str = "right"  # 侧边栏贴靠屏幕边缘 ("right" | "left")
+    schedule_sidebar_offset_y: int = 0  # 侧边栏垂直居中偏移量 (像素)
+    schedule_sidebar_custom_appearance: bool = False  # 是否启用侧边栏专属外观 (默认 False 跟随主程序全局外观)
+    schedule_sidebar_corner_radius: float = 22.0  # 侧边栏专属圆角半径 (像素)
+    schedule_sidebar_opacity: float = 1.0  # 侧边栏专属背景不透明度 (0.0 ~ 1.0)
 
     class Config:
         use_enum_values = True

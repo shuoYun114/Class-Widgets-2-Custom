@@ -244,3 +244,39 @@ def test_config_empty_or_minimal_file_recovery(tmp_path, qapp, empty_input):
 
     assert manager.preferences.schedule_sidebar_enabled is True
     assert manager.preferences.schedule_sidebar_collapsed is False
+
+
+def test_sidebar_custom_config_defaults(config_env):
+    """Tier 1: 验证侧边栏自定义功能新增字段的默认值契约"""
+    manager, _ = config_env
+    manager.load_config()
+
+    assert manager.preferences.schedule_sidebar_edge == "right"
+    assert manager.preferences.schedule_sidebar_offset_y == 0
+    assert manager.preferences.schedule_sidebar_custom_appearance is False
+    assert manager.preferences.schedule_sidebar_corner_radius == 22.0
+    assert manager.preferences.schedule_sidebar_opacity == 1.0
+
+
+def test_sidebar_custom_config_read_write_persistence(config_env):
+    """Tier 1: 验证侧边栏自定义位置、偏移与外观的点分键读写与落盘持久化"""
+    manager, config_file = config_env
+
+    # 写入自定义设置
+    manager.set("preferences.schedule_sidebar_edge", "left")
+    manager.set("preferences.schedule_sidebar_offset_y", 60)
+    manager.set("preferences.schedule_sidebar_custom_appearance", True)
+    manager.set("preferences.schedule_sidebar_corner_radius", 18.0)
+    manager.set("preferences.schedule_sidebar_opacity", 0.85)
+    manager.save()
+
+    # 重新加载验证
+    reloaded = ConfigManager(config_file.parent, config_file.name)
+    reloaded.load_config()
+
+    assert reloaded.preferences.schedule_sidebar_edge == "left"
+    assert reloaded.preferences.schedule_sidebar_offset_y == 60
+    assert reloaded.preferences.schedule_sidebar_custom_appearance is True
+    assert reloaded.preferences.schedule_sidebar_corner_radius == 18.0
+    assert reloaded.preferences.schedule_sidebar_opacity == 0.85
+

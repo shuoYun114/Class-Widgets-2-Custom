@@ -18,6 +18,11 @@ Item {
     property bool activeState: false
     property bool buttonsVisible: opacity > 0.05
 
+    // 自定义外观与定位属性 (由父级 ScheduleSidebar 传入)
+    property bool isLeftEdge: false
+    property real cornerRadius: 21
+    property real bgOpacity: 1.0
+
     // 信号
     signal expandWeeklyClicked()
     signal collapseSidebarClicked()
@@ -57,7 +62,7 @@ Item {
         }
     }
 
-    // 进出平滑动画 (使用纯 GPU Translate 矩阵位移与淡入，杜绝昂贵的 scale 缩放重采样)
+    // 进出平滑动画 (根据左右边缘镜像 Translate 矩阵位移与淡入)
     opacity: activeState ? 1.0 : 0.0
     visible: opacity > 0.01
 
@@ -66,7 +71,7 @@ Item {
     }
 
     transform: Translate {
-        x: hoverButtonsRoot.activeState ? 0 : 12
+        x: hoverButtonsRoot.activeState ? 0 : (hoverButtonsRoot.isLeftEdge ? -12 : 12)
         Behavior on x {
             NumberAnimation { duration: 200; easing.type: Easing.OutCubic }
         }
@@ -96,7 +101,7 @@ Item {
             // 阴影 (轻量级硬件缓存快速渲染)
             DropShadow {
                 anchors.fill: btn1Bg
-                horizontalOffset: -2
+                horizontalOffset: hoverButtonsRoot.isLeftEdge ? 2 : -2
                 verticalOffset: 3
                 radius: 8
                 samples: 8
@@ -109,7 +114,7 @@ Item {
             Rectangle {
                 id: btn1Bg
                 anchors.fill: parent
-                radius: 21
+                radius: hoverButtonsRoot.cornerRadius
                 color: {
                     if (btn1Area.pressed) {
                         return Theme.isDark() ? Qt.alpha("#3A3840", 0.95) : Qt.alpha("#E5E5EA", 0.95);
@@ -117,7 +122,9 @@ Item {
                     if (btn1Area.containsMouse) {
                         return Theme.isDark() ? Qt.alpha("#2E2D34", 0.92) : Qt.alpha("#F2F2F7", 0.95);
                     }
-                    return Theme.isDark() ? Qt.alpha("#212026", 0.85) : Qt.alpha("#FCFBFF", 0.90);
+                    return Theme.isDark()
+                        ? Qt.alpha("#212026", 0.88 * hoverButtonsRoot.bgOpacity)
+                        : Qt.alpha("#FCFBFF", 0.94 * hoverButtonsRoot.bgOpacity);
                 }
                 border.width: 1
                 border.color: Theme.isDark() ? Qt.alpha("#FFFFFF", 0.22) : Qt.alpha("#000000", 0.10)
@@ -146,11 +153,13 @@ Item {
                 }
             }
 
-            // 悬停提示 Tooltip
+            // 悬停提示 Tooltip (根据贴边方向镜像展开)
             Rectangle {
                 id: tooltip1
-                anchors.right: parent.left
-                anchors.rightMargin: 8
+                anchors.right: hoverButtonsRoot.isLeftEdge ? undefined : parent.left
+                anchors.left: hoverButtonsRoot.isLeftEdge ? parent.right : undefined
+                anchors.rightMargin: hoverButtonsRoot.isLeftEdge ? 0 : 8
+                anchors.leftMargin: hoverButtonsRoot.isLeftEdge ? 8 : 0
                 anchors.verticalCenter: parent.verticalCenter
                 width: tipText1.implicitWidth + 14
                 height: 24
@@ -184,7 +193,7 @@ Item {
             // 阴影 (轻量级硬件缓存快速渲染)
             DropShadow {
                 anchors.fill: btn2Bg
-                horizontalOffset: -2
+                horizontalOffset: hoverButtonsRoot.isLeftEdge ? 2 : -2
                 verticalOffset: 3
                 radius: 8
                 samples: 8
@@ -197,7 +206,7 @@ Item {
             Rectangle {
                 id: btn2Bg
                 anchors.fill: parent
-                radius: 21
+                radius: hoverButtonsRoot.cornerRadius
                 color: {
                     if (btn2Area.pressed) {
                         return Theme.isDark() ? Qt.alpha("#3A3840", 0.95) : Qt.alpha("#E5E5EA", 0.95);
@@ -205,17 +214,19 @@ Item {
                     if (btn2Area.containsMouse) {
                         return Theme.isDark() ? Qt.alpha("#2E2D34", 0.92) : Qt.alpha("#F2F2F7", 0.95);
                     }
-                    return Theme.isDark() ? Qt.alpha("#212026", 0.85) : Qt.alpha("#FCFBFF", 0.90);
+                    return Theme.isDark()
+                        ? Qt.alpha("#212026", 0.88 * hoverButtonsRoot.bgOpacity)
+                        : Qt.alpha("#FCFBFF", 0.94 * hoverButtonsRoot.bgOpacity);
                 }
                 border.width: 1
                 border.color: Theme.isDark() ? Qt.alpha("#FFFFFF", 0.22) : Qt.alpha("#000000", 0.10)
 
                 Behavior on color { ColorAnimation { duration: 150 } }
 
-                // 收缩隐藏图标
+                // 收缩隐藏图标 (靠左时指向左 ⇤，靠右时指向右 ⇥)
                 Text {
                     anchors.centerIn: parent
-                    text: "⇥"
+                    text: hoverButtonsRoot.isLeftEdge ? "⇤" : "⇥"
                     font.pixelSize: 18
                     color: btn2Area.containsMouse ? (Theme.accentColor || "#4A90E2") : (Theme.isDark() ? "#EDEDED" : "#333333")
                     Behavior on color { ColorAnimation { duration: 150 } }
@@ -234,11 +245,13 @@ Item {
                 }
             }
 
-            // 悬停提示 Tooltip
+            // 悬停提示 Tooltip (根据贴边方向镜像展开)
             Rectangle {
                 id: tooltip2
-                anchors.right: parent.left
-                anchors.rightMargin: 8
+                anchors.right: hoverButtonsRoot.isLeftEdge ? undefined : parent.left
+                anchors.left: hoverButtonsRoot.isLeftEdge ? parent.right : undefined
+                anchors.rightMargin: hoverButtonsRoot.isLeftEdge ? 0 : 8
+                anchors.leftMargin: hoverButtonsRoot.isLeftEdge ? 8 : 0
                 anchors.verticalCenter: parent.verticalCenter
                 width: tipText2.implicitWidth + 14
                 height: 24

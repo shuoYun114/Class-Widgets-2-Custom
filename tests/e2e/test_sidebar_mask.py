@@ -446,3 +446,35 @@ def test_sidebar_collapse_mask_race_condition_immunity(mock_widgets_env):
     assert not applied.contains(QPoint(1000, 540))
 
 
+def test_sidebar_left_edge_mask_and_penetration(mock_widgets_env):
+    """
+    Tier 1: 验证侧边栏切换至「靠左贴边」模式时的遮罩合并与屏幕点击穿透：
+    左边缘竖条或小胶囊被精确保护，其余区域（右边缘、屏幕中心）严格 100% 穿透。
+    """
+    win, root, _, sidebar = mock_widgets_env
+    # 1. 靠左贴边 - NORMAL 展开态 (竖条靠左，向右扩展预留按钮区)
+    sidebar.set_sidebar_state("NORMAL")
+    left_bar_rect = [8, 240, 370, 600] # 包含左侧竖条与右侧按钮区
+    sidebar.set_interactive_rects([left_bar_rect])
+
+    win.update_mask()
+    applied = root.get_applied_mask()
+    assert applied.contains(QRect(8, 240, 370, 600))
+    # 屏幕右侧与中央应当 100% 穿透
+    assert not applied.contains(QPoint(1800, 500))
+    assert not applied.contains(QPoint(960, 540))
+
+    # 2. 靠左贴边 - COLLAPSED 折叠态 (仅屏幕左边缘小胶囊)
+    sidebar.set_sidebar_state("COLLAPSED")
+    left_capsule_rect = [0, 508, 20, 64]
+    sidebar.set_interactive_rects([left_capsule_rect])
+
+    win.update_mask()
+    applied_collapsed = root.get_applied_mask()
+    assert applied_collapsed.contains(QRect(0, 508, 20, 64))
+    # 胶囊右侧 1 像素外必须严格穿透
+    assert not applied_collapsed.contains(QPoint(21, 540))
+    assert not applied_collapsed.contains(QPoint(1900, 540))
+
+
+

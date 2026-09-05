@@ -95,8 +95,13 @@
 
 ### 3. 配置管理 (`ConfigManager` ↔ QML `Settings.qml`)
 - **键路径**:
-  - `preferences.schedule_sidebar_enabled`: `bool`，默认 `True`。
-  - `preferences.schedule_sidebar_collapsed`: `bool`，默认 `False`。
+  - `preferences.schedule_sidebar_enabled`: `bool`，默认 `True`（侧边栏启用总开关）。
+  - `preferences.schedule_sidebar_collapsed`: `bool`，默认 `False`（贴边折叠状态）。
+  - `preferences.schedule_sidebar_edge`: `str`，默认 `"right"`（贴靠屏幕边缘，`"right"` | `"left"`）。
+  - `preferences.schedule_sidebar_offset_y`: `int`，默认 `0`（垂直居中偏移量微调，`-500 ~ 500 px`）。
+  - `preferences.schedule_sidebar_custom_appearance`: `bool`，默认 `False`（是否启用侧边栏独立外观）。
+  - `preferences.schedule_sidebar_corner_radius`: `float`，默认 `22.0`（侧边栏独立圆角半径）。
+  - `preferences.schedule_sidebar_opacity`: `float`，默认 `1.0`（侧边栏独立背景不透明度）。
 - **调用接口**:
   - 读取: `Configs.data.preferences.schedule_sidebar_enabled`
   - 写入: `Configs.set("preferences.schedule_sidebar_enabled", val)`

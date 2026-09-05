@@ -429,19 +429,135 @@ FluentPage {
             text: qsTr("Schedule Sidebar")
         }
 
-        SettingCard {
+        SettingExpander {
+            id: sidebarExpander
             Layout.fillWidth: true
             icon.name: "ic_fluent_panel_right_20_regular"
             title: qsTr("Enable Schedule Sidebar")
-            description: qsTr("Display daily schedule capsule on the right screen edge with quick actions and weekly matrix view")
+            description: qsTr("Display daily schedule capsule on the screen edge with quick actions and weekly matrix view")
+            expanded: Configs.data.preferences.schedule_sidebar_enabled !== false
 
-            Switch {
+            action: Switch {
                 id: sidebarSwitch
                 checked: Configs.data.preferences.schedule_sidebar_enabled !== false
                 enabled: !Configs.isKeyLocked("preferences.schedule_sidebar_enabled")
                 onCheckedChanged: {
                     if (checked !== (Configs.data.preferences.schedule_sidebar_enabled !== false)) {
                         Configs.set("preferences.schedule_sidebar_enabled", checked)
+                    }
+                }
+            }
+
+            // 1. 贴靠屏幕边缘 (靠右 / 靠左)
+            SettingItem {
+                title: qsTr("Screen Edge")
+                description: qsTr("Choose whether the sidebar is attached to the right or left edge of the screen")
+
+                ComboBox {
+                    id: edgeCombo
+                    Layout.preferredWidth: 180
+                    model: [
+                        { text: qsTr("Right Edge (Default)"), value: "right" },
+                        { text: qsTr("Left Edge"), value: "left" }
+                    ]
+                    textRole: "text"
+                    enabled: !Configs.isKeyLocked("preferences.schedule_sidebar_edge")
+                    currentIndex: (Configs.data.preferences.schedule_sidebar_edge === "left") ? 1 : 0
+                    onActivated: function(index) {
+                        Configs.set("preferences.schedule_sidebar_edge", model[index].value)
+                    }
+                }
+            }
+
+            // 2. 垂直位置微调 (Y 轴偏移)
+            SettingItem {
+                title: qsTr("Vertical Offset")
+                description: qsTr("Fine-tune vertical position relative to screen center (-500 ~ 500 px)")
+
+                SpinBox {
+                    id: offsetSpinBox
+                    Layout.preferredWidth: 140
+                    from: -500
+                    to: 500
+                    stepSize: 10
+                    editable: true
+                    enabled: !Configs.isKeyLocked("preferences.schedule_sidebar_offset_y")
+                    value: Configs.data.preferences.schedule_sidebar_offset_y || 0
+                    onValueChanged: {
+                        if (focus) {
+                            Configs.set("preferences.schedule_sidebar_offset_y", value)
+                        }
+                    }
+                }
+            }
+
+            // 3. 独立外观自定义开关
+            SettingItem {
+                title: qsTr("Independent Appearance")
+                description: qsTr("Customize corner radius and opacity independently from global widget settings")
+
+                Switch {
+                    id: customAppearanceSwitch
+                    checked: Configs.data.preferences.schedule_sidebar_custom_appearance === true
+                    enabled: !Configs.isKeyLocked("preferences.schedule_sidebar_custom_appearance")
+                    onCheckedChanged: {
+                        if (checked !== (Configs.data.preferences.schedule_sidebar_custom_appearance === true)) {
+                            Configs.set("preferences.schedule_sidebar_custom_appearance", checked)
+                        }
+                    }
+                }
+            }
+
+            // 4. 专属圆角大小 (仅在开启独立外观时可见)
+            SettingItem {
+                visible: customAppearanceSwitch.checked
+                title: qsTr("Sidebar Corner Radius")
+                description: qsTr("Set how rounded the schedule sidebar capsule and panels appear")
+
+                Slider {
+                    from: 0
+                    to: 50
+                    stepSize: 1
+                    tickmarks: true
+                    tickFrequency: 10
+                    toolTip.text: Math.round(value) + " px"
+                    enabled: !Configs.isKeyLocked("preferences.schedule_sidebar_corner_radius")
+                    onValueChanged: {
+                        if (pressed) {
+                            Configs.set("preferences.schedule_sidebar_corner_radius", value)
+                        }
+                    }
+                    Component.onCompleted: {
+                        value = (Configs.data.preferences.schedule_sidebar_corner_radius !== undefined)
+                            ? Configs.data.preferences.schedule_sidebar_corner_radius
+                            : 22
+                    }
+                }
+            }
+
+            // 5. 专属背景不透明度 (仅在开启独立外观时可见)
+            SettingItem {
+                visible: customAppearanceSwitch.checked
+                title: qsTr("Sidebar Opacity")
+                description: qsTr("Change the background opacity of the schedule sidebar")
+
+                Slider {
+                    from: 0.1
+                    to: 1.0
+                    stepSize: 0.05
+                    tickmarks: true
+                    tickFrequency: 0.2
+                    toolTip.text: Math.round(value * 100) + "%"
+                    enabled: !Configs.isKeyLocked("preferences.schedule_sidebar_opacity")
+                    onValueChanged: {
+                        if (pressed) {
+                            Configs.set("preferences.schedule_sidebar_opacity", value)
+                        }
+                    }
+                    Component.onCompleted: {
+                        value = (Configs.data.preferences.schedule_sidebar_opacity !== undefined)
+                            ? Configs.data.preferences.schedule_sidebar_opacity
+                            : 1.0
                     }
                 }
             }

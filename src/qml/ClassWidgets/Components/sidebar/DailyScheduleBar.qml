@@ -18,6 +18,11 @@ Item {
     property bool hasActiveBubble: bubbleCard.opacity > 0.05
     property var activeEntry: null
 
+    // 自定义外观与定位属性 (由父级 ScheduleSidebar 传入)
+    property bool isLeftEdge: false
+    property real cornerRadius: 22
+    property real bgOpacity: 1.0
+
     // 暴露有效交互区域 (相对于当前组件) 给遮罩计算
     function getBarRect() {
         return [x, y, width, height];
@@ -31,13 +36,13 @@ Item {
     // 主体阴影 (轻量级硬件缓存快速渲染)
     DropShadow {
         anchors.fill: capsuleBackground
-        horizontalOffset: -2
+        horizontalOffset: dailyBarRoot.isLeftEdge ? 2 : -2
         verticalOffset: 4
-        radius: 10
+        radius: 12
         samples: 8
         cached: true
         fast: true
-        color: Theme.isDark() ? Qt.alpha("#000000", 0.45) : Qt.alpha("#000000", 0.15)
+        color: Theme.isDark() ? Qt.alpha("#000000", 0.50) : Qt.alpha("#000000", 0.16)
         source: capsuleBackground
     }
 
@@ -45,17 +50,53 @@ Item {
     Rectangle {
         id: capsuleBackground
         anchors.fill: parent
-        radius: 20
-        color: Theme.isDark() ? Qt.alpha("#1C1B20", 0.82) : Qt.alpha("#FCFBFF", 0.90)
+        radius: dailyBarRoot.cornerRadius
+        color: Theme.isDark()
+            ? Qt.alpha("#1C1B20", 0.86 * dailyBarRoot.bgOpacity)
+            : Qt.alpha("#FCFBFF", 0.94 * dailyBarRoot.bgOpacity)
 
-        // 渐变高光边框 (Fluent 规范)
-        Rectangle {
-            id: borderHighlight
+        // 渐变高光边框 (对齐主程序官方 Widget 质感)
+        Item {
             anchors.fill: parent
-            radius: parent.radius
-            color: "transparent"
-            border.width: 1
-            border.color: Theme.isDark() ? Qt.alpha("#FFFFFF", 0.22) : Qt.alpha("#000000", 0.08)
+            Rectangle {
+                id: barBorderRect
+                anchors.fill: parent
+                radius: capsuleBackground.radius
+                layer.enabled: true
+                layer.effect: LinearGradient {
+                    start: Qt.point(0, 0)
+                    end: Qt.point(width, height)
+                    gradient: Gradient {
+                        GradientStop {
+                            position: 0.0
+                            color: Theme.isDark() ? Qt.alpha("#FFFFFF", 0.35) : Qt.alpha("#000000", 0.15)
+                        }
+                        GradientStop {
+                            position: 0.35
+                            color: Theme.isDark() ? Qt.alpha(Theme.accentColor || "#4A90E2", 0.25) : Qt.alpha("#000000", 0.05)
+                        }
+                        GradientStop {
+                            position: 0.7
+                            color: Qt.alpha("#FFFFFF", 0.0)
+                        }
+                        GradientStop {
+                            position: 1.0
+                            color: Theme.isDark() ? Qt.alpha("#FFFFFF", 0.25) : Qt.alpha("#000000", 0.10)
+                        }
+                    }
+                }
+            }
+            layer.enabled: true
+            layer.effect: OpacityMask {
+                maskSource: Rectangle {
+                    width: barBorderRect.width
+                    height: barBorderRect.height
+                    radius: barBorderRect.radius
+                    color: "transparent"
+                    border.width: 1
+                }
+            }
+            opacity: Math.min(1.0, dailyBarRoot.bgOpacity * 1.2)
         }
     }
 
@@ -300,7 +341,7 @@ Item {
 
         width: 190
         height: bubbleInnerLayout.implicitHeight + 24
-        x: -width - 12
+        x: dailyBarRoot.isLeftEdge ? (dailyBarRoot.width + 12) : (-width - 12)
         y: targetY
         z: 999
 
@@ -313,7 +354,7 @@ Item {
         }
 
         transform: Translate {
-            x: bubbleCard.showBubble ? 0 : 8
+            x: bubbleCard.showBubble ? 0 : (dailyBarRoot.isLeftEdge ? -8 : 8)
             Behavior on x {
                 NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
             }
@@ -326,7 +367,7 @@ Item {
         // 气泡卡片阴影 (轻量级硬件缓存快速渲染)
         DropShadow {
             anchors.fill: bubbleBg
-            horizontalOffset: -2
+            horizontalOffset: dailyBarRoot.isLeftEdge ? 2 : -2
             verticalOffset: 4
             radius: 10
             samples: 8
@@ -340,8 +381,10 @@ Item {
         Rectangle {
             id: bubbleBg
             anchors.fill: parent
-            radius: 16
-            color: Theme.isDark() ? Qt.alpha("#212026", 0.94) : Qt.alpha("#FFFFFF", 0.96)
+            radius: Math.max(8, dailyBarRoot.cornerRadius - 4)
+            color: Theme.isDark()
+                ? Qt.alpha("#212026", 0.95 * dailyBarRoot.bgOpacity)
+                : Qt.alpha("#FFFFFF", 0.98 * dailyBarRoot.bgOpacity)
             border.width: 1
             border.color: Theme.isDark() ? Qt.alpha("#FFFFFF", 0.20) : Qt.alpha("#000000", 0.10)
         }

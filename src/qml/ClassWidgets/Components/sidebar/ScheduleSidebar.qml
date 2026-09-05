@@ -18,6 +18,46 @@ Item {
         ? (Configs.data.preferences.schedule_sidebar_enabled !== false)
         : true
 
+    // 贴靠屏幕边缘: "right" (默认) | "left"
+    readonly property string sidebarEdge: (Configs && Configs.data && Configs.data.preferences && Configs.data.preferences.schedule_sidebar_edge)
+        ? Configs.data.preferences.schedule_sidebar_edge
+        : "right"
+    readonly property bool isLeftEdge: (sidebarEdge === "left")
+
+    // 垂直中心偏移量 (微调上下高度)
+    readonly property int sidebarOffsetY: (Configs && Configs.data && Configs.data.preferences && Configs.data.preferences.schedule_sidebar_offset_y !== undefined)
+        ? Configs.data.preferences.schedule_sidebar_offset_y
+        : 0
+
+    // 是否启用侧边栏独立外观
+    readonly property bool customAppearance: (Configs && Configs.data && Configs.data.preferences)
+        ? (Configs.data.preferences.schedule_sidebar_custom_appearance === true)
+        : false
+
+    // 生效圆角大小 (像素): 默认跟随主程序全局外观 widget_corner_radius，自定义时使用专属值
+    readonly property real effectiveCornerRadius: {
+        if (customAppearance) {
+            return (Configs && Configs.data && Configs.data.preferences && Configs.data.preferences.schedule_sidebar_corner_radius !== undefined)
+                ? Configs.data.preferences.schedule_sidebar_corner_radius
+                : 22.0;
+        }
+        return (Configs && Configs.data && Configs.data.preferences && Configs.data.preferences.widget_corner_radius !== undefined)
+            ? Configs.data.preferences.widget_corner_radius
+            : 22.0;
+    }
+
+    // 生效背景不透明度 (0.0 ~ 1.0): 默认跟随主程序全局外观 opacity，自定义时使用专属值
+    readonly property real effectiveOpacity: {
+        if (customAppearance) {
+            return (Configs && Configs.data && Configs.data.preferences && Configs.data.preferences.schedule_sidebar_opacity !== undefined)
+                ? Configs.data.preferences.schedule_sidebar_opacity
+                : 1.0;
+        }
+        return (Configs && Configs.data && Configs.data.preferences && Configs.data.preferences.opacity !== undefined)
+            ? Configs.data.preferences.opacity
+            : 1.0;
+    }
+
     // 初始折叠配置
     readonly property bool initialCollapsed: (Configs && Configs.data && Configs.data.preferences)
         ? (Configs.data.preferences.schedule_sidebar_collapsed === true)
@@ -43,6 +83,14 @@ Item {
     }
 
     onVisibleChanged: {
+        sidebarRoot.geometryChanged();
+    }
+
+    onSidebarEdgeChanged: {
+        sidebarRoot.geometryChanged();
+    }
+
+    onSidebarOffsetYChanged: {
         sidebarRoot.geometryChanged();
     }
 
@@ -84,14 +132,22 @@ Item {
             return [[edgeCapsule.x, edgeCapsule.y, edgeCapsule.width, edgeCapsule.height]];
         }
 
-        // NORMAL 竖条态：合并竖条与左侧按钮/详情气泡预留区
+        // NORMAL 竖条态：合并竖条与按钮/详情气泡预留区
         // 一次性分配好交互区域，避免在鼠标悬停、按钮滑出、气泡淡入期间频繁调用 Win32 SetWindowRgn 造成 DWM 动画掉帧
         var rects = [];
         if (dailyBar.visible && dailyBar.opacity > 0.05) {
-            var extraLeft = 210; // 覆盖悬浮按钮(44px)与气泡卡片(190px)
-            var areaX = Math.max(0, dailyBar.x - extraLeft);
-            var areaW = (dailyBar.x + dailyBar.width) - areaX;
-            rects.push([areaX, dailyBar.y, areaW, dailyBar.height]);
+            var extraSpace = 210; // 覆盖悬浮按钮(44px)与气泡卡片(190px)
+            if (isLeftEdge) {
+                // 靠左贴边：按钮和气泡在竖条右侧
+                var areaX = dailyBar.x;
+                var areaW = dailyBar.width + extraSpace;
+                rects.push([areaX, dailyBar.y, areaW, dailyBar.height]);
+            } else {
+                // 靠右贴边：按钮和气泡在竖条左侧
+                var areaX = Math.max(0, dailyBar.x - extraSpace);
+                var areaW = (dailyBar.x + dailyBar.width) - areaX;
+                rects.push([areaX, dailyBar.y, areaW, dailyBar.height]);
+            }
         }
 
         return rects;
@@ -144,8 +200,13 @@ Item {
     // ==========================================
     EdgeRestoreCapsule {
         id: edgeCapsule
-        anchors.right: parent.right
+        anchors.right: sidebarRoot.isLeftEdge ? undefined : parent.right
+        anchors.left: sidebarRoot.isLeftEdge ? parent.left : undefined
         anchors.verticalCenter: parent.verticalCenter
+        anchors.verticalCenterOffset: sidebarRoot.sidebarOffsetY
+        isLeftEdge: sidebarRoot.isLeftEdge
+        cornerRadius: Math.min(12, sidebarRoot.effectiveCornerRadius / 2)
+        bgOpacity: sidebarRoot.effectiveOpacity
         isActive: (sidebarRoot.sidebarState === "COLLAPSED")
         z: 1000
 
@@ -159,9 +220,15 @@ Item {
     // ==========================================
     DailyScheduleBar {
         id: dailyBar
-        anchors.right: parent.right
-        anchors.rightMargin: 8
+        anchors.right: sidebarRoot.isLeftEdge ? undefined : parent.right
+        anchors.rightMargin: sidebarRoot.isLeftEdge ? 0 : 8
+        anchors.left: sidebarRoot.isLeftEdge ? parent.left : undefined
+        anchors.leftMargin: sidebarRoot.isLeftEdge ? 8 : 0
         anchors.verticalCenter: parent.verticalCenter
+        anchors.verticalCenterOffset: sidebarRoot.sidebarOffsetY
+        isLeftEdge: sidebarRoot.isLeftEdge
+        cornerRadius: sidebarRoot.effectiveCornerRadius
+        bgOpacity: sidebarRoot.effectiveOpacity
         z: 1000
 
         opacity: (sidebarRoot.sidebarState === "NORMAL") ? 1.0 : 0.0
@@ -172,10 +239,11 @@ Item {
         }
     }
 
-    // 靠近竖条左侧时的鼠标感应扩展区 (触发双按钮滑出)
+    // 靠近竖条一侧时的鼠标感应扩展区 (触发双按钮滑出)
     MouseArea {
         id: hoverTriggerArea
-        anchors.right: dailyBar.left
+        anchors.right: sidebarRoot.isLeftEdge ? undefined : dailyBar.left
+        anchors.left: sidebarRoot.isLeftEdge ? dailyBar.right : undefined
         anchors.verticalCenter: dailyBar.verticalCenter
         width: 32
         height: dailyBar.height
@@ -198,9 +266,14 @@ Item {
     // ==========================================
     SidebarHoverButtons {
         id: hoverButtons
-        anchors.right: dailyBar.left
-        anchors.rightMargin: 10
+        anchors.right: sidebarRoot.isLeftEdge ? undefined : dailyBar.left
+        anchors.rightMargin: sidebarRoot.isLeftEdge ? 0 : 10
+        anchors.left: sidebarRoot.isLeftEdge ? dailyBar.right : undefined
+        anchors.leftMargin: sidebarRoot.isLeftEdge ? 10 : 0
         anchors.verticalCenter: dailyBar.verticalCenter
+        isLeftEdge: sidebarRoot.isLeftEdge
+        cornerRadius: Math.min(21, sidebarRoot.effectiveCornerRadius)
+        bgOpacity: sidebarRoot.effectiveOpacity
         z: 1010
         enabled: (sidebarRoot.sidebarState === "NORMAL")
 
@@ -218,9 +291,15 @@ Item {
     // ==========================================
     WeeklySchedulePanel {
         id: weeklyPanel
-        anchors.right: parent.right
-        anchors.rightMargin: 24
+        anchors.right: sidebarRoot.isLeftEdge ? undefined : parent.right
+        anchors.rightMargin: sidebarRoot.isLeftEdge ? 0 : 24
+        anchors.left: sidebarRoot.isLeftEdge ? parent.left : undefined
+        anchors.leftMargin: sidebarRoot.isLeftEdge ? 24 : 0
         anchors.verticalCenter: parent.verticalCenter
+        anchors.verticalCenterOffset: sidebarRoot.sidebarOffsetY
+        isLeftEdge: sidebarRoot.isLeftEdge
+        cornerRadius: sidebarRoot.effectiveCornerRadius
+        bgOpacity: sidebarRoot.effectiveOpacity
         z: 1050
 
         isExpanded: (sidebarRoot.sidebarState === "EXPANDED")
