@@ -21,19 +21,21 @@ Item {
 
     signal requestClose()
 
-    // 进出平滑动画
+    // 进出平滑动画 (使用纯 GPU Translate 矩阵位移与淡入，杜绝昂贵的整树 scale 重采样)
     opacity: isExpanded ? 1.0 : 0.0
-    scale: isExpanded ? 1.0 : 0.94
     visible: opacity > 0.01
 
     Behavior on opacity {
-        NumberAnimation { duration: 260; easing.type: Easing.OutQuad }
+        NumberAnimation { duration: 220; easing.type: Easing.OutQuad }
     }
-    Behavior on scale {
-        NumberAnimation {
-            duration: 300
-            easing.type: Easing.Bezier
-            easing.bezierCurve: BezierCurve.liquidBack
+
+    transform: Translate {
+        x: weeklyPanelRoot.isExpanded ? 0 : 36
+        Behavior on x {
+            NumberAnimation {
+                duration: 240
+                easing.type: Easing.OutCubic
+            }
         }
     }
 
@@ -48,14 +50,16 @@ Item {
         return [retractBtnItem.x, retractBtnItem.y, retractBtnItem.width, retractBtnItem.height];
     }
 
-    // 主面板柔和阴影
+    // 主面板轻量级柔和阴影 (开启硬件缓存与快速渲染模式)
     DropShadow {
         anchors.fill: panelBackground
-        horizontalOffset: -4
-        verticalOffset: 10
-        radius: 28
-        samples: 32
-        color: Theme.isDark() ? Qt.alpha("#000000", 0.65) : Qt.alpha("#000000", 0.22)
+        horizontalOffset: -3
+        verticalOffset: 6
+        radius: 14
+        samples: 9
+        cached: true
+        fast: true
+        color: Theme.isDark() ? Qt.alpha("#000000", 0.55) : Qt.alpha("#000000", 0.18)
         source: panelBackground
     }
 
@@ -347,9 +351,11 @@ Item {
             anchors.fill: retractBtnBg
             horizontalOffset: -2
             verticalOffset: 4
-            radius: 12
-            samples: 16
-            color: Theme.isDark() ? Qt.alpha("#000000", 0.50) : Qt.alpha("#000000", 0.16)
+            radius: 8
+            samples: 8
+            cached: true
+            fast: true
+            color: Theme.isDark() ? Qt.alpha("#000000", 0.45) : Qt.alpha("#000000", 0.15)
             source: retractBtnBg
         }
 

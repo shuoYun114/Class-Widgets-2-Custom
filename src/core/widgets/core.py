@@ -217,12 +217,12 @@ class WidgetsWindow(ReleasableWindow, QObject):
         if self.root_window:
             self.root_window.setMask(QRegion(QRect(0, 0, 1, 1)))
 
-    def schedule_mask_update(self):
+    def schedule_mask_update(self, delay: int = 35):
         if self._mask_update_pending:
             return
 
         self._mask_update_pending = True
-        QTimer.singleShot(0, self.update_mask)
+        QTimer.singleShot(delay, self.update_mask)
 
     # 裁剪窗口
     def update_mask(self):

@@ -46,24 +46,17 @@ Item {
         sidebarRoot.geometryChanged();
     }
 
-    // 监听子组件尺寸与状态变化
+    // 监听子组件尺寸与状态变化 (仅关键物理尺寸与状态变更时通知，避免 hover 中途反复触发 setMask)
     Connections {
         target: dailyBar
-        function onHasActiveBubbleChanged() { sidebarRoot.geometryChanged(); }
+        function onHeightChanged() { sidebarRoot.geometryChanged(); }
         function onBarHoveredChanged() {
             if (dailyBar.barHovered) {
                 hoverButtons.requestShow();
             } else if (!hoverButtons.isHovered) {
                 hoverButtons.requestHideWithBuffer();
             }
-            sidebarRoot.geometryChanged();
         }
-    }
-
-    Connections {
-        target: hoverButtons
-        function onButtonsVisibleChanged() { sidebarRoot.geometryChanged(); }
-        function onActiveStateChanged() { sidebarRoot.geometryChanged(); }
     }
 
     // ==========================================
@@ -87,23 +80,14 @@ Item {
             return [];
         }
 
-        // NORMAL 竖条态
+        // NORMAL 竖条态：合并竖条与左侧按钮/详情气泡预留区
+        // 一次性分配好交互区域，避免在鼠标悬停、按钮滑出、气泡淡入期间频繁调用 Win32 SetWindowRgn 造成 DWM 动画掉帧
         var rects = [];
         if (dailyBar.visible && dailyBar.opacity > 0.05) {
-            rects.push([dailyBar.x, dailyBar.y, dailyBar.width, dailyBar.height]);
-
-            // 悬浮气泡卡片矩形
-            if (dailyBar.hasActiveBubble) {
-                var bRect = dailyBar.getBubbleRect();
-                if (bRect[2] > 0 && bRect[3] > 0) {
-                    rects.push([dailyBar.x + bRect[0], dailyBar.y + bRect[1], bRect[2], bRect[3]]);
-                }
-            }
-        }
-
-        // 悬浮双按钮矩形
-        if (hoverButtons.visible && hoverButtons.opacity > 0.05) {
-            rects.push([hoverButtons.x, hoverButtons.y, hoverButtons.width, hoverButtons.height]);
+            var extraLeft = 210; // 覆盖悬浮按钮(44px)与气泡卡片(190px)
+            var areaX = Math.max(0, dailyBar.x - extraLeft);
+            var areaW = (dailyBar.x + dailyBar.width) - areaX;
+            rects.push([areaX, dailyBar.y, areaW, dailyBar.height]);
         }
 
         return rects;
@@ -161,10 +145,6 @@ Item {
 
         onRestoreClicked: {
             sidebarRoot.restoreFromEdge();
-        }
-
-        onIsHoveredChanged: {
-            sidebarRoot.geometryChanged();
         }
     }
 

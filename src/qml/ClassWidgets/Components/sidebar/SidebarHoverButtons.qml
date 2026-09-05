@@ -57,19 +57,18 @@ Item {
         }
     }
 
-    // 进出平滑动画
+    // 进出平滑动画 (使用纯 GPU Translate 矩阵位移与淡入，杜绝昂贵的 scale 缩放重采样)
     opacity: activeState ? 1.0 : 0.0
-    scale: activeState ? 1.0 : 0.88
     visible: opacity > 0.01
 
     Behavior on opacity {
-        NumberAnimation { duration: 240; easing.type: Easing.OutQuad }
+        NumberAnimation { duration: 180; easing.type: Easing.OutQuad }
     }
-    Behavior on scale {
-        NumberAnimation {
-            duration: 280
-            easing.type: Easing.Bezier
-            easing.bezierCurve: BezierCurve.liquidBack
+
+    transform: Translate {
+        x: hoverButtonsRoot.activeState ? 0 : 12
+        Behavior on x {
+            NumberAnimation { duration: 200; easing.type: Easing.OutCubic }
         }
     }
 
@@ -94,14 +93,16 @@ Item {
             Layout.preferredHeight: 42
             Layout.alignment: Qt.AlignHCenter
 
-            // 阴影
+            // 阴影 (轻量级硬件缓存快速渲染)
             DropShadow {
                 anchors.fill: btn1Bg
                 horizontalOffset: -2
-                verticalOffset: 4
-                radius: 12
-                samples: 16
-                color: Theme.isDark() ? Qt.alpha("#000000", 0.50) : Qt.alpha("#000000", 0.16)
+                verticalOffset: 3
+                radius: 8
+                samples: 8
+                cached: true
+                fast: true
+                color: Theme.isDark() ? Qt.alpha("#000000", 0.45) : Qt.alpha("#000000", 0.15)
                 source: btn1Bg
             }
 
@@ -180,14 +181,16 @@ Item {
             Layout.preferredHeight: 42
             Layout.alignment: Qt.AlignHCenter
 
-            // 阴影
+            // 阴影 (轻量级硬件缓存快速渲染)
             DropShadow {
                 anchors.fill: btn2Bg
                 horizontalOffset: -2
-                verticalOffset: 4
-                radius: 12
-                samples: 16
-                color: Theme.isDark() ? Qt.alpha("#000000", 0.50) : Qt.alpha("#000000", 0.16)
+                verticalOffset: 3
+                radius: 8
+                samples: 8
+                cached: true
+                fast: true
+                color: Theme.isDark() ? Qt.alpha("#000000", 0.45) : Qt.alpha("#000000", 0.15)
                 source: btn2Bg
             }
 

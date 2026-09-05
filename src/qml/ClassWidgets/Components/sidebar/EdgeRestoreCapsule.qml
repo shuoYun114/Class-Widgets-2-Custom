@@ -24,30 +24,31 @@ Item {
         return [x, y, width, height];
     }
 
-    // 贴边胶囊进出动画
-    opacity: isActive ? (isHovered ? 1.0 : 0.35) : 0.0
-    scale: isActive ? (isHovered ? 1.05 : 1.0) : 0.85
+    // 贴边胶囊进出动画 (使用纯 GPU Translate 矩阵位移与淡入，杜绝 scale 重采样)
+    opacity: isActive ? (isHovered ? 1.0 : 0.40) : 0.0
     visible: opacity > 0.01
 
     Behavior on opacity {
-        NumberAnimation { duration: 220; easing.type: Easing.OutQuad }
+        NumberAnimation { duration: 180; easing.type: Easing.OutQuad }
     }
-    Behavior on scale {
-        NumberAnimation {
-            duration: 250
-            easing.type: Easing.Bezier
-            easing.bezierCurve: BezierCurve.liquidBack
+
+    transform: Translate {
+        x: !edgeCapsuleRoot.isActive ? 20 : (edgeCapsuleRoot.isHovered ? -2 : 0)
+        Behavior on x {
+            NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
         }
     }
 
-    // 柔和微投影
+    // 柔和微投影 (轻量级硬件缓存快速渲染)
     DropShadow {
         anchors.fill: capsuleBg
-        horizontalOffset: -2
+        horizontalOffset: -1
         verticalOffset: 2
-        radius: 8
-        samples: 12
-        color: Theme.isDark() ? Qt.alpha("#000000", 0.45) : Qt.alpha("#000000", 0.15)
+        radius: 6
+        samples: 8
+        cached: true
+        fast: true
+        color: Theme.isDark() ? Qt.alpha("#000000", 0.40) : Qt.alpha("#000000", 0.12)
         source: capsuleBg
     }
 
