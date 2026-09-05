@@ -59,6 +59,13 @@ Item {
         }
     }
 
+    // 监听贴边微胶囊状态变化，确保折叠态遮罩及时同步
+    Connections {
+        target: edgeCapsule
+        function onVisibleChanged() { sidebarRoot.geometryChanged(); }
+        function onIsActiveChanged() { sidebarRoot.geometryChanged(); }
+    }
+
     // ==========================================
     // 计算并返回当前所有有效交互矩形 [ [x, y, w, h], ... ]
     // ==========================================
@@ -72,12 +79,9 @@ Item {
             return [[0, 0, width, height]];
         }
 
-        // 折叠态：仅贴边小胶囊
+        // 折叠态：仅贴边小胶囊（无条件立即保留遮罩区域，杜绝淡入动画期间 DWM 裁剪导致不可见与穿透失效）
         if (sidebarState === "COLLAPSED") {
-            if (edgeCapsule.visible && edgeCapsule.opacity > 0.05) {
-                return [[edgeCapsule.x, edgeCapsule.y, edgeCapsule.width, edgeCapsule.height]];
-            }
-            return [];
+            return [[edgeCapsule.x, edgeCapsule.y, edgeCapsule.width, edgeCapsule.height]];
         }
 
         // NORMAL 竖条态：合并竖条与左侧按钮/详情气泡预留区
@@ -124,6 +128,7 @@ Item {
         if (Configs && Configs.set) {
             Configs.set("preferences.schedule_sidebar_collapsed", true);
         }
+        sidebarRoot.geometryChanged();
     }
 
     function restoreFromEdge() {
@@ -131,6 +136,7 @@ Item {
         if (Configs && Configs.set) {
             Configs.set("preferences.schedule_sidebar_collapsed", false);
         }
+        sidebarRoot.geometryChanged();
     }
 
     // ==========================================

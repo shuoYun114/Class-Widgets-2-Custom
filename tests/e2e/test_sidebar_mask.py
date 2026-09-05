@@ -422,3 +422,27 @@ def test_sidebar_mask_floating_scale_compatibility(mock_widgets_env, scale):
     assert applied.contains(QRect(200, 200, scaled_w, scaled_h))
     assert applied.contains(QRect(1740, 200, 180, 680))
 
+
+def test_sidebar_collapse_mask_race_condition_immunity(mock_widgets_env):
+    """
+    回归测试: 验证最小化/折叠瞬间小胶囊遮罩立即可用，绝不因淡入动画未结束而返回空矩形导致 DWM 裁剪消失。
+    确保折叠后无需点击顶部主程序浮窗即可直接命中并唤回侧边栏。
+    """
+    win, root, _, sidebar = mock_widgets_env
+    # 模拟进入折叠态，小胶囊初始 opacity 为 0.0
+    sidebar.set_sidebar_state("COLLAPSED")
+    # 修复后的规范契约：无条件保留胶囊交互矩形
+    capsule_rect = [1900, 508, 20, 64]
+    sidebar.set_interactive_rects([capsule_rect])
+
+    win.update_mask()
+    applied = root.get_applied_mask()
+
+    # 遮罩必须立即可用，不允许为空
+    assert not applied.isEmpty()
+    assert applied.contains(QRect(1900, 508, 20, 64))
+    # 严密保证胶囊外依然 100% 穿透
+    assert not applied.contains(QPoint(1899, 540))
+    assert not applied.contains(QPoint(1000, 540))
+
+

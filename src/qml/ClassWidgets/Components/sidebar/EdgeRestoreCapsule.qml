@@ -9,7 +9,7 @@ import ClassWidgets.Easing
 Item {
     id: edgeCapsuleRoot
 
-    // 尺寸：微型贴边胶囊，宽度约 20px，高度约 64px
+    // 尺寸：微型贴边胶囊，宽度约 20px，高度约 64px (严格契合系统遮罩与数学穿透率)
     width: 20
     height: 64
 
@@ -20,12 +20,12 @@ Item {
     signal restoreClicked()
 
     function getInteractiveRect() {
-        if (!visible || opacity < 0.05) return [0, 0, 0, 0];
+        if (!isActive) return [0, 0, 0, 0];
         return [x, y, width, height];
     }
 
-    // 贴边胶囊进出动画 (使用纯 GPU Translate 矩阵位移与淡入，杜绝 scale 重采样)
-    opacity: isActive ? (isHovered ? 1.0 : 0.40) : 0.0
+    // 贴边胶囊进出动画 (未悬停时保持 0.88 良好辨识度，悬停时 1.0 全亮高光)
+    opacity: isActive ? (isHovered ? 1.0 : 0.88) : 0.0
     visible: opacity > 0.01
 
     Behavior on opacity {
@@ -33,22 +33,22 @@ Item {
     }
 
     transform: Translate {
-        x: !edgeCapsuleRoot.isActive ? 20 : (edgeCapsuleRoot.isHovered ? -2 : 0)
+        x: !edgeCapsuleRoot.isActive ? 20 : (edgeCapsuleRoot.isHovered ? -3 : 0)
         Behavior on x {
             NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
         }
     }
 
-    // 柔和微投影 (轻量级硬件缓存快速渲染)
+    // 柔和微投影 (轻量级硬件缓存快速渲染，提升在深浅背景上的悬浮层次)
     DropShadow {
         anchors.fill: capsuleBg
-        horizontalOffset: -1
+        horizontalOffset: -2
         verticalOffset: 2
         radius: 6
         samples: 8
         cached: true
         fast: true
-        color: Theme.isDark() ? Qt.alpha("#000000", 0.40) : Qt.alpha("#000000", 0.12)
+        color: Theme.isDark() ? Qt.alpha("#000000", 0.55) : Qt.alpha("#000000", 0.18)
         source: capsuleBg
     }
 
@@ -67,31 +67,58 @@ Item {
                 return Theme.accentColor || "#4A90E2";
             }
             if (edgeCapsuleRoot.isHovered) {
-                return Theme.isDark() ? Qt.alpha("#2E2D34", 0.95) : Qt.alpha("#EBEBF0", 0.96);
+                return Theme.isDark() ? Qt.alpha("#35343E", 0.98) : Qt.alpha("#EBEBF2", 0.98);
             }
-            return Theme.isDark() ? Qt.alpha("#1C1B20", 0.70) : Qt.alpha("#F2F2F7", 0.75);
+            return Theme.isDark() ? Qt.alpha("#26252C", 0.95) : Qt.alpha("#F7F7FA", 0.98);
         }
 
         border.width: 1
-        border.color: edgeCapsuleRoot.isHovered
-            ? (Theme.accentColor || "#4A90E2")
-            : (Theme.isDark() ? Qt.alpha("#FFFFFF", 0.20) : Qt.alpha("#000000", 0.10))
+        border.color: {
+            if (capsuleMouseArea.pressed || edgeCapsuleRoot.isHovered) {
+                return Theme.accentColor || "#4A90E2";
+            }
+            return Theme.isDark()
+                ? Qt.alpha(Theme.accentColor || "#4A90E2", 0.45)
+                : Qt.alpha("#000000", 0.16);
+        }
 
-        Behavior on color { ColorAnimation { duration: 180 } }
-        Behavior on border.color { ColorAnimation { duration: 180 } }
+        Behavior on color { ColorAnimation { duration: 160 } }
+        Behavior on border.color { ColorAnimation { duration: 160 } }
+
+        // 胶囊内部左侧主题色拉手条 (极具辨识度，解决深色软件背景下隐形)
+        Rectangle {
+            id: accentBar
+            anchors.left: parent.left
+            anchors.leftMargin: 2.5
+            anchors.verticalCenter: parent.verticalCenter
+            width: 2.5
+            height: 22
+            radius: 1.25
+            color: Theme.accentColor || "#4A90E2"
+            opacity: edgeCapsuleRoot.isHovered ? 1.0 : 0.80
+
+            Behavior on opacity { NumberAnimation { duration: 160 } }
+        }
 
         // "<" 向左图标指示符
         Text {
+            id: arrowIcon
             anchors.centerIn: parent
-            anchors.horizontalCenterOffset: -1
+            anchors.horizontalCenterOffset: 1
             text: "‹"
-            font.pixelSize: 18
+            font.pixelSize: 16
             font.bold: true
-            color: edgeCapsuleRoot.isHovered
-                ? (Theme.accentColor || "#4A90E2")
-                : (Theme.isDark() ? "#D0D0D0" : "#666666")
+            color: {
+                if (capsuleMouseArea.pressed) {
+                    return "#FFFFFF";
+                }
+                if (edgeCapsuleRoot.isHovered) {
+                    return Theme.accentColor || "#4A90E2";
+                }
+                return Theme.isDark() ? "#FFFFFF" : "#333333";
+            }
 
-            Behavior on color { ColorAnimation { duration: 180 } }
+            Behavior on color { ColorAnimation { duration: 160 } }
         }
     }
 
@@ -103,32 +130,6 @@ Item {
         cursorShape: Qt.PointingHandCursor
         onClicked: {
             edgeCapsuleRoot.restoreClicked();
-        }
-    }
-
-    // 悬浮靠近时的提示 Tooltip
-    Rectangle {
-        id: capsuleTooltip
-        anchors.right: parent.left
-        anchors.rightMargin: 8
-        anchors.verticalCenter: parent.verticalCenter
-        width: tipLabel.implicitWidth + 14
-        height: 24
-        radius: 6
-        color: Theme.isDark() ? "#2D2C33" : "#F7F7F7"
-        border.width: 1
-        border.color: Theme.isDark() ? Qt.alpha("#FFFFFF", 0.15) : Qt.alpha("#000000", 0.08)
-        opacity: edgeCapsuleRoot.isHovered ? 1.0 : 0.0
-        visible: opacity > 0.01
-
-        Behavior on opacity { NumberAnimation { duration: 160 } }
-
-        Text {
-            id: tipLabel
-            anchors.centerIn: parent
-            text: "呼出课表竖条"
-            font.pixelSize: 11
-            color: Theme.isDark() ? "#EDEDED" : "#222222"
         }
     }
 }
