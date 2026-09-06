@@ -47,55 +47,40 @@ Item {
     }
 
 
-    // 贴边微药丸背景 (紧贴屏幕左/右边缘，苹果液态玻璃拉手条材质)
+    // 贴边微药丸背景 (苹果液态玻璃拉手条，通透度对齐主程序 Widget.qml)
     Rectangle {
         id: capsuleBg
         anchors.fill: parent
-        // 贴边自适应圆角 (靠右时仅左侧圆角，靠左时仅右侧圆角)
         topLeftRadius: edgeCapsuleRoot.isLeftEdge ? 0 : edgeCapsuleRoot.cornerRadius
         bottomLeftRadius: edgeCapsuleRoot.isLeftEdge ? 0 : edgeCapsuleRoot.cornerRadius
         topRightRadius: edgeCapsuleRoot.isLeftEdge ? edgeCapsuleRoot.cornerRadius : 0
         bottomRightRadius: edgeCapsuleRoot.isLeftEdge ? edgeCapsuleRoot.cornerRadius : 0
 
-        gradient: Gradient {
-            GradientStop {
-                position: 0.0
-                color: Theme.isDark()
-                    ? Qt.alpha("#2E2D36", (edgeCapsuleRoot.isHovered ? 0.96 : 0.88) * edgeCapsuleRoot.bgOpacity)
-                    : Qt.alpha("#FFFFFF", (edgeCapsuleRoot.isHovered ? 0.98 : 0.90) * edgeCapsuleRoot.bgOpacity)
+        color: {
+            if (capsuleMouseArea.pressed) {
+                return Theme.accentColor || "#4099b2";
             }
-            GradientStop {
-                position: 1.0
-                color: Theme.isDark()
-                    ? Qt.alpha("#1C1B22", (edgeCapsuleRoot.isHovered ? 0.92 : 0.82) * edgeCapsuleRoot.bgOpacity)
-                    : Qt.alpha("#EBEBF2", (edgeCapsuleRoot.isHovered ? 0.94 : 0.85) * edgeCapsuleRoot.bgOpacity)
+            if (edgeCapsuleRoot.isHovered) {
+                return Theme.isDark() ? Qt.alpha("#2A2930", 0.80) : Qt.alpha("#ECECF2", 0.82);
             }
+            return Theme.isDark()
+                ? Qt.alpha("#1E1D22", 0.65 * edgeCapsuleRoot.bgOpacity)
+                : Qt.alpha("#FBFAFF", 0.70 * edgeCapsuleRoot.bgOpacity);
         }
 
         border.width: 1
         border.color: {
             if (capsuleMouseArea.pressed) {
-                return Theme.accentColor || "#007AFF";
+                return Theme.accentColor || "#4099b2";
             }
             if (edgeCapsuleRoot.isHovered) {
-                return Theme.isDark() ? Qt.alpha("#FFFFFF", 0.35) : Qt.alpha("#FFFFFF", 0.90);
+                return Theme.isDark() ? Qt.alpha("#FFFFFF", 0.45) : Qt.alpha("#FFFFFF", 0.90);
             }
-            return Theme.isDark() ? Qt.alpha("#FFFFFF", 0.16) : Qt.alpha("#FFFFFF", 0.70);
+            return Theme.isDark() ? Qt.alpha("#FFFFFF", 0.20) : Qt.alpha("#FFFFFF", 0.70);
         }
 
+        Behavior on color { ColorAnimation { duration: 160 } }
         Behavior on border.color { ColorAnimation { duration: 160 } }
-
-        // 顶层微光反光线 (模拟玻璃受光面)
-        Rectangle {
-            anchors.top: parent.top
-            anchors.left: parent.left
-            anchors.right: parent.right
-            anchors.margins: 1
-            height: 1
-            topLeftRadius: capsuleBg.topLeftRadius
-            topRightRadius: capsuleBg.topRightRadius
-            color: Theme.isDark() ? Qt.alpha("#FFFFFF", 0.15) : Qt.alpha("#FFFFFF", 0.85)
-        }
 
         // 苹果标准抽屉拉手微胶囊 (Grip Indicator Pill)
         Rectangle {
@@ -106,12 +91,12 @@ Item {
             radius: 1.5
             color: {
                 if (capsuleMouseArea.pressed) {
-                    return Theme.accentColor || "#007AFF";
+                    return "#FFFFFF";
                 }
                 if (edgeCapsuleRoot.isHovered) {
-                    return Theme.isDark() ? "#FFFFFF" : (Theme.accentColor || "#007AFF");
+                    return Theme.isDark() ? "#FFFFFF" : (Theme.accentColor || "#4099b2");
                 }
-                return Theme.isDark() ? Qt.alpha("#FFFFFF", 0.40) : Qt.alpha("#000000", 0.28);
+                return Theme.isDark() ? Qt.alpha("#FFFFFF", 0.45) : Qt.alpha("#000000", 0.30);
             }
 
             Behavior on color { ColorAnimation { duration: 160 } }

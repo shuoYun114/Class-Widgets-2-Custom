@@ -55,42 +55,93 @@ Item {
         return [retractBtnItem.x, retractBtnItem.y, retractBtnItem.width, retractBtnItem.height];
     }
 
-    // 主面板背景 (苹果液态玻璃大面板质感，渐变光影 + 1px Specular Rim 物理微高光边框)
+    // ==========================================
+    // 苹果液态玻璃大面板质感 (对齐主程序 Widget.qml 与 DailyScheduleBar)
+    // 68% 高透光率 + FastBlur 内部柔和流光漫反射 + 对角线渐变物理微高光边框
+    // ==========================================
     Rectangle {
         id: panelBackground
         anchors.fill: parent
         radius: weeklyPanelRoot.cornerRadius
+        color: Theme.isDark()
+            ? Qt.alpha("#1E1D22", 0.68 * weeklyPanelRoot.bgOpacity)
+            : Qt.alpha("#FBFAFF", 0.72 * weeklyPanelRoot.bgOpacity)
+    }
 
-        gradient: Gradient {
-            GradientStop {
-                position: 0.0
-                color: Theme.isDark()
-                    ? Qt.alpha("#24232C", 0.94 * weeklyPanelRoot.bgOpacity)
-                    : Qt.alpha("#FFFFFF", 0.95 * weeklyPanelRoot.bgOpacity)
-            }
-            GradientStop {
-                position: 1.0
-                color: Theme.isDark()
-                    ? Qt.alpha("#15141A", 0.90 * weeklyPanelRoot.bgOpacity)
-                    : Qt.alpha("#F0F0F5", 0.92 * weeklyPanelRoot.bgOpacity)
-            }
-        }
+    // 内部流光微发光层 (Lighting Effect - FastBlur 内部弥散漫反射，营造温润通透感)
+    Item {
+        anchors.fill: parent
+        clip: true
 
-        border.width: 1
-        border.color: Theme.isDark()
-            ? Qt.alpha("#FFFFFF", 0.16)
-            : Qt.alpha("#FFFFFF", 0.70)
-
-        // 顶层微光反光
         Rectangle {
-            anchors.top: parent.top
-            anchors.left: parent.left
-            anchors.right: parent.right
-            anchors.margins: 1
-            height: 1
-            radius: weeklyPanelRoot.cornerRadius
-            color: Theme.isDark() ? Qt.alpha("#FFFFFF", 0.14) : Qt.alpha("#FFFFFF", 0.90)
+            id: ambientGlowLeft
+            x: parent.width * 0.15 - width / 2
+            y: parent.height * 0.25 - height / 2
+            width: 340
+            height: 340
+            radius: 170
+            color: Theme.accentColor || "#4099b2"
+            opacity: (Configs.data && Configs.data.preferences && Configs.data.preferences.lighting_effect !== false) ? 0.25 : 0.0
+            visible: opacity > 0.01
+
+            layer.enabled: true
+            layer.effect: FastBlur {
+                anchors.fill: ambientGlowLeft
+                radius: 64
+                transparentBorder: true
+            }
         }
+
+        Rectangle {
+            id: ambientGlowRight
+            x: parent.width * 0.85 - width / 2
+            y: parent.height * 0.75 - height / 2
+            width: 320
+            height: 320
+            radius: 160
+            color: Theme.accentColor || "#4099b2"
+            opacity: (Configs.data && Configs.data.preferences && Configs.data.preferences.lighting_effect !== false) ? 0.20 : 0.0
+            visible: opacity > 0.01
+
+            layer.enabled: true
+            layer.effect: FastBlur {
+                anchors.fill: ambientGlowRight
+                radius: 64
+                transparentBorder: true
+            }
+        }
+    }
+
+    // 渐变微高光边框 (完全复刻主程序 Widget.qml 的 LinearGradient + OpacityMask 规范)
+    Item {
+        anchors.fill: parent
+        Rectangle {
+            id: borderRect
+            anchors.fill: parent
+            radius: panelBackground.radius
+            layer.enabled: true
+            layer.effect: LinearGradient {
+                start: Qt.point(0, 0)
+                end: Qt.point(width, height)
+                gradient: Gradient {
+                    GradientStop { position: 0.0; color: Theme.isDark() ? Qt.alpha("#FFFFFF", 0.45) : Qt.alpha("#FFFFFF", 0.95) }
+                    GradientStop { position: 0.4; color: Qt.alpha("#FFFFFF", 0.05) }
+                    GradientStop { position: 0.6; color: Qt.alpha("#FFFFFF", 0.05) }
+                    GradientStop { position: 1.0; color: Theme.isDark() ? Qt.alpha("#FFFFFF", 0.35) : Qt.alpha("#FFFFFF", 0.75) }
+                }
+            }
+        }
+        layer.enabled: true
+        layer.effect: OpacityMask {
+            maskSource: Rectangle {
+                width: borderRect.width
+                height: borderRect.height
+                radius: borderRect.radius
+                color: "transparent"
+                border.width: 1
+            }
+        }
+        z: 10
     }
 
     // 拦截点击避免穿透到背景外部收回区域
@@ -194,12 +245,6 @@ Item {
             }
         }
 
-        // 分隔微线 (极细半透明)
-        Rectangle {
-            Layout.fillWidth: true
-            Layout.preferredHeight: 1
-            color: Theme.isDark() ? Qt.alpha("#FFFFFF", 0.08) : Qt.alpha("#000000", 0.06)
-        }
 
         // ==========================================
         // 周一至周日 7 列网格
@@ -405,42 +450,19 @@ Item {
             anchors.fill: parent
             radius: 21
 
-            gradient: Gradient {
-                GradientStop {
-                    position: 0.0
-                    color: {
-                        if (retractMouseArea.pressed) return Theme.isDark() ? Qt.alpha("#3A3844", 0.95) : Qt.alpha("#E5E5EA", 0.95);
-                        if (retractMouseArea.containsMouse) return Theme.isDark() ? Qt.alpha("#2E2D36", 0.92) : Qt.alpha("#F2F2F7", 0.95);
-                        return Theme.isDark() ? Qt.alpha("#26252E", 0.88) : Qt.alpha("#FFFFFF", 0.92);
-                    }
-                }
-                GradientStop {
-                    position: 1.0
-                    color: {
-                        if (retractMouseArea.pressed) return Theme.isDark() ? Qt.alpha("#2E2D36", 0.95) : Qt.alpha("#D1D1D6", 0.95);
-                        if (retractMouseArea.containsMouse) return Theme.isDark() ? Qt.alpha("#201F26", 0.92) : Qt.alpha("#E5E5EA", 0.95);
-                        return Theme.isDark() ? Qt.alpha("#17161D", 0.82) : Qt.alpha("#ECECF2", 0.88);
-                    }
-                }
+            color: {
+                if (retractMouseArea.pressed) return Theme.isDark() ? Qt.alpha("#2E2D36", 0.90) : Qt.alpha("#E0E0E6", 0.90);
+                if (retractMouseArea.containsMouse) return Theme.isDark() ? Qt.alpha("#26252C", 0.82) : Qt.alpha("#ECECF2", 0.85);
+                return Theme.isDark() ? Qt.alpha("#1E1D22", 0.65 * weeklyPanelRoot.bgOpacity) : Qt.alpha("#FBFAFF", 0.70 * weeklyPanelRoot.bgOpacity);
             }
 
             border.width: 1
             border.color: retractMouseArea.containsMouse
-                ? (Theme.isDark() ? Qt.alpha("#FFFFFF", 0.35) : Qt.alpha("#FFFFFF", 0.90))
-                : (Theme.isDark() ? Qt.alpha("#FFFFFF", 0.16) : Qt.alpha("#FFFFFF", 0.70))
+                ? (Theme.isDark() ? Qt.alpha("#FFFFFF", 0.45) : Qt.alpha("#FFFFFF", 0.95))
+                : (Theme.isDark() ? Qt.alpha("#FFFFFF", 0.20) : Qt.alpha("#FFFFFF", 0.70))
 
+            Behavior on color { ColorAnimation { duration: 150 } }
             Behavior on border.color { ColorAnimation { duration: 150 } }
-
-            // 顶层微光反光
-            Rectangle {
-                anchors.top: parent.top
-                anchors.left: parent.left
-                anchors.right: parent.right
-                anchors.margins: 1
-                height: 1
-                radius: parent.radius
-                color: Theme.isDark() ? Qt.alpha("#FFFFFF", 0.15) : Qt.alpha("#FFFFFF", 0.85)
-            }
 
             // 极细 Chevron 矢量收回微图标 (替代字符 ❯)
             Item {
@@ -491,9 +513,9 @@ Item {
             width: retractTipText.implicitWidth + 16
             height: 24
             radius: 8
-            color: Theme.isDark() ? Qt.alpha("#26252C", 0.95) : Qt.alpha("#FFFFFF", 0.96)
+            color: Theme.isDark() ? Qt.alpha("#1E1D22", 0.85) : Qt.alpha("#FBFAFF", 0.88)
             border.width: 1
-            border.color: Theme.isDark() ? Qt.alpha("#FFFFFF", 0.16) : Qt.alpha("#FFFFFF", 0.70)
+            border.color: Theme.isDark() ? Qt.alpha("#FFFFFF", 0.22) : Qt.alpha("#FFFFFF", 0.75)
             opacity: retractMouseArea.containsMouse ? 1.0 : 0.0
             visible: opacity > 0.01
 

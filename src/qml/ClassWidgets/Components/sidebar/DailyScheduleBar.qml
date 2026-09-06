@@ -41,47 +41,72 @@ Item {
     }
 
     // ==========================================
-    // 苹果液态玻璃质感背景 (Liquid Glass Material)
-    // 渐变光影 + 1px Specular Rim 物理微高光边框 + 顶层微折射反光
+    // 苹果液态玻璃质感背景 (Liquid Glass Material - 对齐主程序 Widget.qml)
+    // 65% 高透光率 + FastBlur 64px 内部柔和流光漫反射 + 对角线渐变物理微高光边框
     // ==========================================
     Rectangle {
         id: capsuleBackground
         anchors.fill: parent
         radius: dailyBarRoot.cornerRadius
+        color: Theme.isDark()
+            ? Qt.alpha("#1E1D22", 0.65 * dailyBarRoot.bgOpacity)
+            : Qt.alpha("#FBFAFF", 0.70 * dailyBarRoot.bgOpacity)
+    }
 
-        gradient: Gradient {
-            GradientStop {
-                position: 0.0
-                color: Theme.isDark()
-                    ? Qt.alpha("#26252E", 0.88 * dailyBarRoot.bgOpacity)
-                    : Qt.alpha("#FFFFFF", 0.88 * dailyBarRoot.bgOpacity)
-            }
-            GradientStop {
-                position: 1.0
-                color: Theme.isDark()
-                    ? Qt.alpha("#17161D", 0.82 * dailyBarRoot.bgOpacity)
-                    : Qt.alpha("#ECECF2", 0.84 * dailyBarRoot.bgOpacity)
-            }
-        }
+    // 内部流光微发光层 (Lighting Effect - FastBlur 内部弥散漫反射，营造温润通透感)
+    Item {
+        anchors.fill: parent
+        clip: true
 
-        // 物理微高光边缘折射 (Specular Rim Light)
-        border.width: 1
-        border.color: Theme.isDark()
-            ? Qt.alpha("#FFFFFF", 0.16)
-            : Qt.alpha("#FFFFFF", 0.70)
-
-        // 顶层微弱反光线 (模拟玻璃受光面倒角)
         Rectangle {
-            anchors.top: parent.top
-            anchors.left: parent.left
-            anchors.right: parent.right
-            anchors.margins: 1
-            height: 1
-            radius: dailyBarRoot.cornerRadius
-            color: Theme.isDark()
-                ? Qt.alpha("#FFFFFF", 0.12)
-                : Qt.alpha("#FFFFFF", 0.90)
+            id: ambientGlow
+            anchors.centerIn: parent
+            width: Math.min(parent.width, parent.height) * 0.75
+            height: width
+            radius: width / 2
+            color: Theme.accentColor || "#4099b2"
+            opacity: (Configs.data && Configs.data.preferences && Configs.data.preferences.lighting_effect !== false) ? 0.35 : 0.0
+            visible: opacity > 0.01
+
+            layer.enabled: true
+            layer.effect: FastBlur {
+                anchors.fill: ambientGlow
+                radius: 64
+                transparentBorder: true
+            }
         }
+    }
+
+    // 渐变微高光边框 (完全复刻主程序 Widget.qml 的 LinearGradient + OpacityMask 规范)
+    Item {
+        anchors.fill: parent
+        Rectangle {
+            id: borderRect
+            anchors.fill: parent
+            radius: capsuleBackground.radius
+            layer.enabled: true
+            layer.effect: LinearGradient {
+                start: Qt.point(0, 0)
+                end: Qt.point(width, height)
+                gradient: Gradient {
+                    GradientStop { position: 0.0; color: Theme.isDark() ? Qt.alpha("#FFFFFF", 0.45) : Qt.alpha("#FFFFFF", 0.95) }
+                    GradientStop { position: 0.4; color: Qt.alpha("#FFFFFF", 0.05) }
+                    GradientStop { position: 0.6; color: Qt.alpha("#FFFFFF", 0.05) }
+                    GradientStop { position: 1.0; color: Theme.isDark() ? Qt.alpha("#FFFFFF", 0.35) : Qt.alpha("#FFFFFF", 0.75) }
+                }
+            }
+        }
+        layer.enabled: true
+        layer.effect: OpacityMask {
+            maskSource: Rectangle {
+                width: borderRect.width
+                height: borderRect.height
+                radius: borderRect.radius
+                color: "transparent"
+                border.width: 1
+            }
+        }
+        z: 10
     }
 
     // 整体鼠标悬浮监听
@@ -96,25 +121,17 @@ Item {
     ColumnLayout {
         id: contentLayout
         anchors.fill: parent
-        anchors.margins: 12
-        spacing: 8
+        anchors.margins: 14
+        spacing: 10
 
-        // 顶部极简标题栏
+        // 顶部极简标题栏 (无生硬横分割线，依靠自然留白与字阶呼吸)
         Item {
             Layout.fillWidth: true
             Layout.preferredHeight: 28
 
             RowLayout {
                 anchors.fill: parent
-                spacing: 6
-
-                // 极简微光小点
-                Rectangle {
-                    width: 4
-                    height: 4
-                    radius: 2
-                    color: Theme.accentColor || "#007AFF"
-                }
+                spacing: 8
 
                 Text {
                     text: {
@@ -123,9 +140,9 @@ Item {
                         var dayStr = (weekday >= 1 && weekday <= 7) ? days[weekday] : "今日";
                         return dayStr + "日程";
                     }
-                    font.pixelSize: 12
+                    font.pixelSize: 13
                     font.bold: true
-                    color: Theme.isDark() ? "#F5F5F7" : "#1D1D1F"
+                    color: Theme.isDark() ? "#FFFFFF" : "#1D1D1F"
                 }
 
                 Item { Layout.fillWidth: true }
@@ -136,24 +153,17 @@ Item {
                     height: 18
                     width: countBadgeText.implicitWidth + 12
                     radius: 9
-                    color: Theme.isDark() ? Qt.alpha("#FFFFFF", 0.07) : Qt.alpha("#000000", 0.05)
+                    color: Theme.isDark() ? Qt.alpha("#FFFFFF", 0.10) : Qt.alpha("#000000", 0.06)
 
                     Text {
                         id: countBadgeText
                         anchors.centerIn: parent
                         text: dailyBarRoot.courseCount + " 节"
                         font.pixelSize: 10
-                        color: Theme.isDark() ? "#9898A0" : "#6E6E73"
+                        color: Theme.isDark() ? "#B0B0B8" : "#6E6E73"
                     }
                 }
             }
-        }
-
-        // 分隔微线 (极细半透明)
-        Rectangle {
-            Layout.fillWidth: true
-            Layout.preferredHeight: 1
-            color: Theme.isDark() ? Qt.alpha("#FFFFFF", 0.08) : Qt.alpha("#000000", 0.06)
         }
 
         // 课程平滑滚动列表
@@ -167,30 +177,43 @@ Item {
 
             model: dailyBarRoot.scheduleList
 
-            // 空课表占位提示 (去除 emoji，采用极简现代排版)
+            // 空课表占位提示 (完全呼应主程序 Widget【暂无日程】极简设计)
             Item {
                 anchors.centerIn: parent
                 width: parent.width - 16
-                height: 100
+                height: 110
                 visible: dailyBarRoot.courseCount === 0
 
                 ColumnLayout {
                     anchors.centerIn: parent
-                    spacing: 6
+                    spacing: 8
 
-                    Rectangle {
+                    // 极简圆润日程环图标
+                    Canvas {
                         Layout.alignment: Qt.AlignHCenter
-                        width: 16
-                        height: 2
-                        radius: 1
-                        color: Theme.isDark() ? Qt.alpha("#FFFFFF", 0.20) : Qt.alpha("#000000", 0.15)
+                        width: 24
+                        height: 24
+                        onPaint: {
+                            var ctx = getContext("2d");
+                            ctx.clearRect(0, 0, width, height);
+                            ctx.strokeStyle = Theme.isDark() ? Qt.alpha("#FFFFFF", 0.50) : Qt.alpha("#000000", 0.40);
+                            ctx.lineWidth = 1.8;
+                            ctx.beginPath();
+                            ctx.arc(12, 12, 9, 0, 2 * Math.PI);
+                            ctx.stroke();
+                            ctx.fillStyle = Theme.accentColor || "#4099b2";
+                            ctx.beginPath();
+                            ctx.arc(12, 12, 2.5, 0, 2 * Math.PI);
+                            ctx.fill();
+                        }
                     }
 
                     Text {
                         Layout.alignment: Qt.AlignHCenter
-                        text: "今日暂无课程安排"
-                        font.pixelSize: 11
-                        color: Theme.isDark() ? "#707078" : "#8E8E93"
+                        text: "暂无日程"
+                        font.pixelSize: 13
+                        font.bold: true
+                        color: Theme.isDark() ? "#FFFFFF" : "#1D1D1F"
                     }
                 }
             }
@@ -375,42 +398,68 @@ Item {
             NumberAnimation { duration: 160; easing.type: Easing.OutCubic }
         }
 
-        // 气泡卡片背景 (苹果液态毛玻璃大卡片)
+        // 气泡卡片背景 (苹果液态毛玻璃卡片，通透度与主程序 Widget 完全一致)
         Rectangle {
             id: bubbleBg
             anchors.fill: parent
             radius: Math.max(10, dailyBarRoot.cornerRadius - 4)
+            color: Theme.isDark()
+                ? Qt.alpha("#1E1D22", 0.72 * dailyBarRoot.bgOpacity)
+                : Qt.alpha("#FBFAFF", 0.78 * dailyBarRoot.bgOpacity)
+        }
 
-            gradient: Gradient {
-                GradientStop {
-                    position: 0.0
-                    color: Theme.isDark()
-                        ? Qt.alpha("#2A2933", 0.94 * dailyBarRoot.bgOpacity)
-                        : Qt.alpha("#FFFFFF", 0.96 * dailyBarRoot.bgOpacity)
-                }
-                GradientStop {
-                    position: 1.0
-                    color: Theme.isDark()
-                        ? Qt.alpha("#1D1C24", 0.92 * dailyBarRoot.bgOpacity)
-                        : Qt.alpha("#F5F5FA", 0.94 * dailyBarRoot.bgOpacity)
-                }
-            }
-
-            border.width: 1
-            border.color: Theme.isDark()
-                ? Qt.alpha("#FFFFFF", 0.20)
-                : Qt.alpha("#FFFFFF", 0.75)
-
-            // 顶层微光折射
+        // 气泡内部柔和流光漫反射
+        Item {
+            anchors.fill: parent
+            clip: true
             Rectangle {
-                anchors.top: parent.top
-                anchors.left: parent.left
-                anchors.right: parent.right
-                anchors.margins: 1
-                height: 1
-                radius: parent.radius
-                color: Theme.isDark() ? Qt.alpha("#FFFFFF", 0.15) : Qt.alpha("#FFFFFF", 0.95)
+                id: bubbleGlow
+                anchors.centerIn: parent
+                width: parent.width * 0.8
+                height: parent.height * 0.6
+                radius: width / 2
+                color: dailyBarRoot.activeEntry ? (dailyBarRoot.activeEntry.color || "#4099b2") : "#4099b2"
+                opacity: 0.25
+
+                layer.enabled: true
+                layer.effect: FastBlur {
+                    anchors.fill: bubbleGlow
+                    radius: 48
+                    transparentBorder: true
+                }
             }
+        }
+
+        // 气泡渐变高光边框 (复刻 Widget.qml)
+        Item {
+            anchors.fill: parent
+            Rectangle {
+                id: bubbleBorderRect
+                anchors.fill: parent
+                radius: bubbleBg.radius
+                layer.enabled: true
+                layer.effect: LinearGradient {
+                    start: Qt.point(0, 0)
+                    end: Qt.point(width, height)
+                    gradient: Gradient {
+                        GradientStop { position: 0.0; color: Theme.isDark() ? Qt.alpha("#FFFFFF", 0.50) : Qt.alpha("#FFFFFF", 0.95) }
+                        GradientStop { position: 0.4; color: Qt.alpha("#FFFFFF", 0.05) }
+                        GradientStop { position: 0.6; color: Qt.alpha("#FFFFFF", 0.05) }
+                        GradientStop { position: 1.0; color: Theme.isDark() ? Qt.alpha("#FFFFFF", 0.35) : Qt.alpha("#FFFFFF", 0.70) }
+                    }
+                }
+            }
+            layer.enabled: true
+            layer.effect: OpacityMask {
+                maskSource: Rectangle {
+                    width: bubbleBorderRect.width
+                    height: bubbleBorderRect.height
+                    radius: bubbleBorderRect.radius
+                    color: "transparent"
+                    border.width: 1
+                }
+            }
+            z: 10
         }
 
         MouseArea {
@@ -424,10 +473,10 @@ Item {
         ColumnLayout {
             id: bubbleInnerLayout
             anchors.fill: parent
-            anchors.margins: 12
+            anchors.margins: 14
             spacing: 8
 
-            // 标题行与状态胶囊
+            // 标题行与状态胶囊 (无分割线，优雅留白)
             RowLayout {
                 Layout.fillWidth: true
                 spacing: 6
@@ -454,7 +503,7 @@ Item {
                     height: 16
                     width: statusTagText.implicitWidth + 10
                     radius: 8
-                    color: Qt.alpha(dailyBarRoot.activeEntry ? (dailyBarRoot.activeEntry.color || "#007AFF") : "#007AFF", 0.18)
+                    color: Qt.alpha(dailyBarRoot.activeEntry ? (dailyBarRoot.activeEntry.color || "#007AFF") : "#007AFF", 0.22)
 
                     Text {
                         id: statusTagText
@@ -465,13 +514,6 @@ Item {
                         color: dailyBarRoot.activeEntry ? (dailyBarRoot.activeEntry.color || "#007AFF") : "#007AFF"
                     }
                 }
-            }
-
-            // 分割微线
-            Rectangle {
-                Layout.fillWidth: true
-                Layout.preferredHeight: 1
-                color: Theme.isDark() ? Qt.alpha("#FFFFFF", 0.08) : Qt.alpha("#000000", 0.06)
             }
 
             // 时间信息 (无 Emoji，极简两列)

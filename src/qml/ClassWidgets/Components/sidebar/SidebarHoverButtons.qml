@@ -103,42 +103,19 @@ Item {
                 anchors.fill: parent
                 radius: hoverButtonsRoot.cornerRadius
 
-                gradient: Gradient {
-                    GradientStop {
-                        position: 0.0
-                        color: {
-                            if (btn1Area.pressed) return Theme.isDark() ? Qt.alpha("#3A3844", 0.95) : Qt.alpha("#E5E5EA", 0.95);
-                            if (btn1Area.containsMouse) return Theme.isDark() ? Qt.alpha("#2E2D36", 0.92) : Qt.alpha("#F2F2F7", 0.95);
-                            return Theme.isDark() ? Qt.alpha("#26252E", 0.88 * hoverButtonsRoot.bgOpacity) : Qt.alpha("#FFFFFF", 0.92 * hoverButtonsRoot.bgOpacity);
-                        }
-                    }
-                    GradientStop {
-                        position: 1.0
-                        color: {
-                            if (btn1Area.pressed) return Theme.isDark() ? Qt.alpha("#2E2D36", 0.95) : Qt.alpha("#D1D1D6", 0.95);
-                            if (btn1Area.containsMouse) return Theme.isDark() ? Qt.alpha("#201F26", 0.92) : Qt.alpha("#E5E5EA", 0.95);
-                            return Theme.isDark() ? Qt.alpha("#17161D", 0.82 * hoverButtonsRoot.bgOpacity) : Qt.alpha("#ECECF2", 0.88 * hoverButtonsRoot.bgOpacity);
-                        }
-                    }
+                color: {
+                    if (btn1Area.pressed) return Theme.isDark() ? Qt.alpha("#2E2D36", 0.90) : Qt.alpha("#E0E0E6", 0.90);
+                    if (btn1Area.containsMouse) return Theme.isDark() ? Qt.alpha("#26252C", 0.82) : Qt.alpha("#ECECF2", 0.85);
+                    return Theme.isDark() ? Qt.alpha("#1E1D22", 0.65 * hoverButtonsRoot.bgOpacity) : Qt.alpha("#FBFAFF", 0.70 * hoverButtonsRoot.bgOpacity);
                 }
 
                 border.width: 1
                 border.color: btn1Area.containsMouse
-                    ? (Theme.isDark() ? Qt.alpha("#FFFFFF", 0.35) : Qt.alpha("#FFFFFF", 0.90))
-                    : (Theme.isDark() ? Qt.alpha("#FFFFFF", 0.16) : Qt.alpha("#FFFFFF", 0.70))
+                    ? (Theme.isDark() ? Qt.alpha("#FFFFFF", 0.45) : Qt.alpha("#FFFFFF", 0.95))
+                    : (Theme.isDark() ? Qt.alpha("#FFFFFF", 0.20) : Qt.alpha("#FFFFFF", 0.70))
 
+                Behavior on color { ColorAnimation { duration: 150 } }
                 Behavior on border.color { ColorAnimation { duration: 150 } }
-
-                // 顶层微光反光
-                Rectangle {
-                    anchors.top: parent.top
-                    anchors.left: parent.left
-                    anchors.right: parent.right
-                    anchors.margins: 1
-                    height: 1
-                    radius: parent.radius
-                    color: Theme.isDark() ? Qt.alpha("#FFFFFF", 0.15) : Qt.alpha("#FFFFFF", 0.85)
-                }
 
                 // 精美 2x2 极简日历矩阵微图标 (替代 AI 粗糙字符 ▦)
                 Item {
@@ -157,7 +134,7 @@ Item {
                                 width: 5
                                 height: 5
                                 radius: 1.5
-                                color: btn1Area.containsMouse ? (Theme.accentColor || "#007AFF") : (Theme.isDark() ? "#EDEDED" : "#1D1D1F")
+                                color: btn1Area.containsMouse ? (Theme.accentColor || "#4099b2") : (Theme.isDark() ? "#EDEDED" : "#1D1D1F")
                                 Behavior on color { ColorAnimation { duration: 150 } }
                             }
                         }
@@ -188,9 +165,9 @@ Item {
                 width: tipText1.implicitWidth + 16
                 height: 24
                 radius: 8
-                color: Theme.isDark() ? Qt.alpha("#26252C", 0.95) : Qt.alpha("#FFFFFF", 0.96)
+                color: Theme.isDark() ? Qt.alpha("#1E1D22", 0.85) : Qt.alpha("#FBFAFF", 0.88)
                 border.width: 1
-                border.color: Theme.isDark() ? Qt.alpha("#FFFFFF", 0.16) : Qt.alpha("#FFFFFF", 0.70)
+                border.color: Theme.isDark() ? Qt.alpha("#FFFFFF", 0.22) : Qt.alpha("#FFFFFF", 0.75)
                 opacity: btn1Area.containsMouse ? 1.0 : 0.0
                 visible: opacity > 0.01
 
@@ -219,42 +196,20 @@ Item {
                 anchors.fill: parent
                 radius: hoverButtonsRoot.cornerRadius
 
-                gradient: Gradient {
-                    GradientStop {
-                        position: 0.0
-                        color: {
-                            if (btn2Area.pressed) return Theme.isDark() ? Qt.alpha("#3A3844", 0.95) : Qt.alpha("#E5E5EA", 0.95);
-                            if (btn2Area.containsMouse) return Theme.isDark() ? Qt.alpha("#2E2D36", 0.92) : Qt.alpha("#F2F2F7", 0.95);
-                            return Theme.isDark() ? Qt.alpha("#26252E", 0.88 * hoverButtonsRoot.bgOpacity) : Qt.alpha("#FFFFFF", 0.92 * hoverButtonsRoot.bgOpacity);
-                        }
-                    }
-                    GradientStop {
-                        position: 1.0
-                        color: {
-                            if (btn2Area.pressed) return Theme.isDark() ? Qt.alpha("#2E2D36", 0.95) : Qt.alpha("#D1D1D6", 0.95);
-                            if (btn2Area.containsMouse) return Theme.isDark() ? Qt.alpha("#201F26", 0.92) : Qt.alpha("#E5E5EA", 0.95);
-                            return Theme.isDark() ? Qt.alpha("#17161D", 0.82 * hoverButtonsRoot.bgOpacity) : Qt.alpha("#ECECF2", 0.88 * hoverButtonsRoot.bgOpacity);
-                        }
-                    }
+                color: {
+                    if (btn2Area.pressed) return Theme.isDark() ? Qt.alpha("#2E2D36", 0.90) : Qt.alpha("#E0E0E6", 0.90);
+                    if (btn2Area.containsMouse) return Theme.isDark() ? Qt.alpha("#26252C", 0.82) : Qt.alpha("#ECECF2", 0.85);
+                    return Theme.isDark() ? Qt.alpha("#1E1D22", 0.65 * hoverButtonsRoot.bgOpacity) : Qt.alpha("#FBFAFF", 0.70 * hoverButtonsRoot.bgOpacity);
                 }
 
                 border.width: 1
                 border.color: btn2Area.containsMouse
-                    ? (Theme.isDark() ? Qt.alpha("#FFFFFF", 0.35) : Qt.alpha("#FFFFFF", 0.90))
-                    : (Theme.isDark() ? Qt.alpha("#FFFFFF", 0.16) : Qt.alpha("#FFFFFF", 0.70))
+                    ? (Theme.isDark() ? Qt.alpha("#FFFFFF", 0.45) : Qt.alpha("#FFFFFF", 0.95))
+                    : (Theme.isDark() ? Qt.alpha("#FFFFFF", 0.20) : Qt.alpha("#FFFFFF", 0.70))
 
+                Behavior on color { ColorAnimation { duration: 150 } }
                 Behavior on border.color { ColorAnimation { duration: 150 } }
 
-                // 顶层微光反光
-                Rectangle {
-                    anchors.top: parent.top
-                    anchors.left: parent.left
-                    anchors.right: parent.right
-                    anchors.margins: 1
-                    height: 1
-                    radius: parent.radius
-                    color: Theme.isDark() ? Qt.alpha("#FFFFFF", 0.15) : Qt.alpha("#FFFFFF", 0.85)
-                }
 
                 // 极细 Chevron 矢量折叠微图标 (替代粗糙字符 ⇤/⇥)
                 Item {
