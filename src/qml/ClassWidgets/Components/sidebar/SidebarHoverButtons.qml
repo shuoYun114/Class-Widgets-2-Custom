@@ -91,41 +91,77 @@ Item {
         spacing: 12
 
         // =====================================
-        // 按钮 1: 展开全周大面板
+        // 按钮 1: 展开全周大面板 (苹果液态玻璃圆盘 + 极简 2x2 矩阵微图标)
         // =====================================
         Item {
             Layout.preferredWidth: 42
             Layout.preferredHeight: 42
             Layout.alignment: Qt.AlignHCenter
 
-
             Rectangle {
                 id: btn1Bg
                 anchors.fill: parent
                 radius: hoverButtonsRoot.cornerRadius
-                color: {
-                    if (btn1Area.pressed) {
-                        return Theme.isDark() ? Qt.alpha("#3A3840", 0.95) : Qt.alpha("#E5E5EA", 0.95);
+
+                gradient: Gradient {
+                    GradientStop {
+                        position: 0.0
+                        color: {
+                            if (btn1Area.pressed) return Theme.isDark() ? Qt.alpha("#3A3844", 0.95) : Qt.alpha("#E5E5EA", 0.95);
+                            if (btn1Area.containsMouse) return Theme.isDark() ? Qt.alpha("#2E2D36", 0.92) : Qt.alpha("#F2F2F7", 0.95);
+                            return Theme.isDark() ? Qt.alpha("#26252E", 0.88 * hoverButtonsRoot.bgOpacity) : Qt.alpha("#FFFFFF", 0.92 * hoverButtonsRoot.bgOpacity);
+                        }
                     }
-                    if (btn1Area.containsMouse) {
-                        return Theme.isDark() ? Qt.alpha("#2E2D34", 0.92) : Qt.alpha("#F2F2F7", 0.95);
+                    GradientStop {
+                        position: 1.0
+                        color: {
+                            if (btn1Area.pressed) return Theme.isDark() ? Qt.alpha("#2E2D36", 0.95) : Qt.alpha("#D1D1D6", 0.95);
+                            if (btn1Area.containsMouse) return Theme.isDark() ? Qt.alpha("#201F26", 0.92) : Qt.alpha("#E5E5EA", 0.95);
+                            return Theme.isDark() ? Qt.alpha("#17161D", 0.82 * hoverButtonsRoot.bgOpacity) : Qt.alpha("#ECECF2", 0.88 * hoverButtonsRoot.bgOpacity);
+                        }
                     }
-                    return Theme.isDark()
-                        ? Qt.alpha("#212026", 0.88 * hoverButtonsRoot.bgOpacity)
-                        : Qt.alpha("#FCFBFF", 0.94 * hoverButtonsRoot.bgOpacity);
                 }
+
                 border.width: 1
-                border.color: Theme.isDark() ? Qt.alpha("#FFFFFF", 0.22) : Qt.alpha("#000000", 0.10)
+                border.color: btn1Area.containsMouse
+                    ? (Theme.isDark() ? Qt.alpha("#FFFFFF", 0.35) : Qt.alpha("#FFFFFF", 0.90))
+                    : (Theme.isDark() ? Qt.alpha("#FFFFFF", 0.16) : Qt.alpha("#FFFFFF", 0.70))
 
-                Behavior on color { ColorAnimation { duration: 150 } }
+                Behavior on border.color { ColorAnimation { duration: 150 } }
 
-                // 网格/全周图标
-                Text {
+                // 顶层微光反光
+                Rectangle {
+                    anchors.top: parent.top
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.margins: 1
+                    height: 1
+                    radius: parent.radius
+                    color: Theme.isDark() ? Qt.alpha("#FFFFFF", 0.15) : Qt.alpha("#FFFFFF", 0.85)
+                }
+
+                // 精美 2x2 极简日历矩阵微图标 (替代 AI 粗糙字符 ▦)
+                Item {
                     anchors.centerIn: parent
-                    text: "▦"
-                    font.pixelSize: 18
-                    color: btn1Area.containsMouse ? (Theme.accentColor || "#4A90E2") : (Theme.isDark() ? "#EDEDED" : "#333333")
-                    Behavior on color { ColorAnimation { duration: 150 } }
+                    width: 14
+                    height: 14
+
+                    Grid {
+                        anchors.centerIn: parent
+                        columns: 2
+                        spacing: 3
+
+                        Repeater {
+                            model: 4
+                            Rectangle {
+                                width: 5
+                                height: 5
+                                radius: 1.5
+                                color: btn1Area.containsMouse ? (Theme.accentColor || "#007AFF") : (Theme.isDark() ? "#EDEDED" : "#1D1D1F")
+                                Behavior on color { ColorAnimation { duration: 150 } }
+                            }
+                        }
+                    }
                 }
             }
 
@@ -141,7 +177,7 @@ Item {
                 }
             }
 
-            // 悬停提示 Tooltip (根据贴边方向镜像展开)
+            // 悬停提示 Tooltip (苹果半透明胶囊气泡)
             Rectangle {
                 id: tooltip1
                 anchors.right: hoverButtonsRoot.isLeftEdge ? undefined : parent.left
@@ -149,12 +185,12 @@ Item {
                 anchors.rightMargin: hoverButtonsRoot.isLeftEdge ? 0 : 8
                 anchors.leftMargin: hoverButtonsRoot.isLeftEdge ? 8 : 0
                 anchors.verticalCenter: parent.verticalCenter
-                width: tipText1.implicitWidth + 14
+                width: tipText1.implicitWidth + 16
                 height: 24
-                radius: 6
-                color: Theme.isDark() ? "#2D2C33" : "#F7F7F7"
+                radius: 8
+                color: Theme.isDark() ? Qt.alpha("#26252C", 0.95) : Qt.alpha("#FFFFFF", 0.96)
                 border.width: 1
-                border.color: Theme.isDark() ? Qt.alpha("#FFFFFF", 0.15) : Qt.alpha("#000000", 0.08)
+                border.color: Theme.isDark() ? Qt.alpha("#FFFFFF", 0.16) : Qt.alpha("#FFFFFF", 0.70)
                 opacity: btn1Area.containsMouse ? 1.0 : 0.0
                 visible: opacity > 0.01
 
@@ -163,49 +199,107 @@ Item {
                 Text {
                     id: tipText1
                     anchors.centerIn: parent
-                    text: "展开全周课表"
+                    text: "全周课表"
                     font.pixelSize: 11
-                    color: Theme.isDark() ? "#EDEDED" : "#222222"
+                    color: Theme.isDark() ? "#EDEDED" : "#1D1D1F"
                 }
             }
         }
 
         // =====================================
-        // 按钮 2: 收起隐藏竖条
+        // 按钮 2: 收起隐藏竖条 (苹果液态玻璃圆盘 + 极细 Chevron 矢量折叠微图标)
         // =====================================
         Item {
             Layout.preferredWidth: 42
             Layout.preferredHeight: 42
             Layout.alignment: Qt.AlignHCenter
 
-
             Rectangle {
                 id: btn2Bg
                 anchors.fill: parent
                 radius: hoverButtonsRoot.cornerRadius
-                color: {
-                    if (btn2Area.pressed) {
-                        return Theme.isDark() ? Qt.alpha("#3A3840", 0.95) : Qt.alpha("#E5E5EA", 0.95);
+
+                gradient: Gradient {
+                    GradientStop {
+                        position: 0.0
+                        color: {
+                            if (btn2Area.pressed) return Theme.isDark() ? Qt.alpha("#3A3844", 0.95) : Qt.alpha("#E5E5EA", 0.95);
+                            if (btn2Area.containsMouse) return Theme.isDark() ? Qt.alpha("#2E2D36", 0.92) : Qt.alpha("#F2F2F7", 0.95);
+                            return Theme.isDark() ? Qt.alpha("#26252E", 0.88 * hoverButtonsRoot.bgOpacity) : Qt.alpha("#FFFFFF", 0.92 * hoverButtonsRoot.bgOpacity);
+                        }
                     }
-                    if (btn2Area.containsMouse) {
-                        return Theme.isDark() ? Qt.alpha("#2E2D34", 0.92) : Qt.alpha("#F2F2F7", 0.95);
+                    GradientStop {
+                        position: 1.0
+                        color: {
+                            if (btn2Area.pressed) return Theme.isDark() ? Qt.alpha("#2E2D36", 0.95) : Qt.alpha("#D1D1D6", 0.95);
+                            if (btn2Area.containsMouse) return Theme.isDark() ? Qt.alpha("#201F26", 0.92) : Qt.alpha("#E5E5EA", 0.95);
+                            return Theme.isDark() ? Qt.alpha("#17161D", 0.82 * hoverButtonsRoot.bgOpacity) : Qt.alpha("#ECECF2", 0.88 * hoverButtonsRoot.bgOpacity);
+                        }
                     }
-                    return Theme.isDark()
-                        ? Qt.alpha("#212026", 0.88 * hoverButtonsRoot.bgOpacity)
-                        : Qt.alpha("#FCFBFF", 0.94 * hoverButtonsRoot.bgOpacity);
                 }
+
                 border.width: 1
-                border.color: Theme.isDark() ? Qt.alpha("#FFFFFF", 0.22) : Qt.alpha("#000000", 0.10)
+                border.color: btn2Area.containsMouse
+                    ? (Theme.isDark() ? Qt.alpha("#FFFFFF", 0.35) : Qt.alpha("#FFFFFF", 0.90))
+                    : (Theme.isDark() ? Qt.alpha("#FFFFFF", 0.16) : Qt.alpha("#FFFFFF", 0.70))
 
-                Behavior on color { ColorAnimation { duration: 150 } }
+                Behavior on border.color { ColorAnimation { duration: 150 } }
 
-                // 收缩隐藏图标 (靠左时指向左 ⇤，靠右时指向右 ⇥)
-                Text {
+                // 顶层微光反光
+                Rectangle {
+                    anchors.top: parent.top
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.margins: 1
+                    height: 1
+                    radius: parent.radius
+                    color: Theme.isDark() ? Qt.alpha("#FFFFFF", 0.15) : Qt.alpha("#FFFFFF", 0.85)
+                }
+
+                // 极细 Chevron 矢量折叠微图标 (替代粗糙字符 ⇤/⇥)
+                Item {
                     anchors.centerIn: parent
-                    text: hoverButtonsRoot.isLeftEdge ? "⇤" : "⇥"
-                    font.pixelSize: 18
-                    color: btn2Area.containsMouse ? (Theme.accentColor || "#4A90E2") : (Theme.isDark() ? "#EDEDED" : "#333333")
-                    Behavior on color { ColorAnimation { duration: 150 } }
+                    width: 14
+                    height: 14
+
+                    readonly property color iconColor: btn2Area.containsMouse ? (Theme.accentColor || "#007AFF") : (Theme.isDark() ? "#EDEDED" : "#1D1D1F")
+
+                    Canvas {
+                        id: collapseCanvas
+                        anchors.fill: parent
+                        onPaint: {
+                            var ctx = getContext("2d");
+                            ctx.clearRect(0, 0, width, height);
+                            ctx.strokeStyle = parent.iconColor;
+                            ctx.lineWidth = 1.6;
+                            ctx.lineCap = "round";
+                            ctx.lineJoin = "round";
+                            ctx.beginPath();
+                            if (hoverButtonsRoot.isLeftEdge) {
+                                ctx.moveTo(9, 3);
+                                ctx.lineTo(4, 7);
+                                ctx.lineTo(9, 11);
+                                ctx.moveTo(12, 3);
+                                ctx.lineTo(12, 11);
+                            } else {
+                                ctx.moveTo(5, 3);
+                                ctx.lineTo(10, 7);
+                                ctx.lineTo(5, 11);
+                                ctx.moveTo(2, 3);
+                                ctx.lineTo(2, 11);
+                            }
+                            ctx.stroke();
+                        }
+
+                        Connections {
+                            target: btn2Area
+                            function onContainsMouseChanged() { collapseCanvas.requestPaint(); }
+                        }
+                        Connections {
+                            target: hoverButtonsRoot
+                            function onIsLeftEdgeChanged() { collapseCanvas.requestPaint(); }
+                        }
+                    }
                 }
             }
 
@@ -221,7 +315,7 @@ Item {
                 }
             }
 
-            // 悬停提示 Tooltip (根据贴边方向镜像展开)
+            // 悬停提示 Tooltip (苹果半透明胶囊气泡)
             Rectangle {
                 id: tooltip2
                 anchors.right: hoverButtonsRoot.isLeftEdge ? undefined : parent.left
@@ -229,12 +323,12 @@ Item {
                 anchors.rightMargin: hoverButtonsRoot.isLeftEdge ? 0 : 8
                 anchors.leftMargin: hoverButtonsRoot.isLeftEdge ? 8 : 0
                 anchors.verticalCenter: parent.verticalCenter
-                width: tipText2.implicitWidth + 14
+                width: tipText2.implicitWidth + 16
                 height: 24
-                radius: 6
-                color: Theme.isDark() ? "#2D2C33" : "#F7F7F7"
+                radius: 8
+                color: Theme.isDark() ? Qt.alpha("#26252C", 0.95) : Qt.alpha("#FFFFFF", 0.96)
                 border.width: 1
-                border.color: Theme.isDark() ? Qt.alpha("#FFFFFF", 0.15) : Qt.alpha("#000000", 0.08)
+                border.color: Theme.isDark() ? Qt.alpha("#FFFFFF", 0.16) : Qt.alpha("#FFFFFF", 0.70)
                 opacity: btn2Area.containsMouse ? 1.0 : 0.0
                 visible: opacity > 0.01
 
@@ -243,9 +337,9 @@ Item {
                 Text {
                     id: tipText2
                     anchors.centerIn: parent
-                    text: "收起隐藏竖条"
+                    text: "收起侧边栏"
                     font.pixelSize: 11
-                    color: Theme.isDark() ? "#EDEDED" : "#222222"
+                    color: Theme.isDark() ? "#EDEDED" : "#1D1D1F"
                 }
             }
         }

@@ -47,7 +47,7 @@ Item {
     }
 
 
-    // 贴边微药丸背景 (紧贴屏幕左/右边缘)
+    // 贴边微药丸背景 (紧贴屏幕左/右边缘，苹果液态玻璃拉手条材质)
     Rectangle {
         id: capsuleBg
         anchors.fill: parent
@@ -57,64 +57,61 @@ Item {
         topRightRadius: edgeCapsuleRoot.isLeftEdge ? edgeCapsuleRoot.cornerRadius : 0
         bottomRightRadius: edgeCapsuleRoot.isLeftEdge ? edgeCapsuleRoot.cornerRadius : 0
 
-        color: {
-            if (capsuleMouseArea.pressed) {
-                return Theme.accentColor || "#4A90E2";
+        gradient: Gradient {
+            GradientStop {
+                position: 0.0
+                color: Theme.isDark()
+                    ? Qt.alpha("#2E2D36", (edgeCapsuleRoot.isHovered ? 0.96 : 0.88) * edgeCapsuleRoot.bgOpacity)
+                    : Qt.alpha("#FFFFFF", (edgeCapsuleRoot.isHovered ? 0.98 : 0.90) * edgeCapsuleRoot.bgOpacity)
             }
-            if (edgeCapsuleRoot.isHovered) {
-                return Theme.isDark() ? Qt.alpha("#35343E", 0.98) : Qt.alpha("#EBEBF2", 0.98);
+            GradientStop {
+                position: 1.0
+                color: Theme.isDark()
+                    ? Qt.alpha("#1C1B22", (edgeCapsuleRoot.isHovered ? 0.92 : 0.82) * edgeCapsuleRoot.bgOpacity)
+                    : Qt.alpha("#EBEBF2", (edgeCapsuleRoot.isHovered ? 0.94 : 0.85) * edgeCapsuleRoot.bgOpacity)
             }
-            return Theme.isDark()
-                ? Qt.alpha("#26252C", 0.95 * edgeCapsuleRoot.bgOpacity)
-                : Qt.alpha("#F7F7FA", 0.98 * edgeCapsuleRoot.bgOpacity);
         }
 
         border.width: 1
         border.color: {
-            if (capsuleMouseArea.pressed || edgeCapsuleRoot.isHovered) {
-                return Theme.accentColor || "#4A90E2";
+            if (capsuleMouseArea.pressed) {
+                return Theme.accentColor || "#007AFF";
             }
-            return Theme.isDark()
-                ? Qt.alpha(Theme.accentColor || "#4A90E2", 0.45)
-                : Qt.alpha("#000000", 0.16);
+            if (edgeCapsuleRoot.isHovered) {
+                return Theme.isDark() ? Qt.alpha("#FFFFFF", 0.35) : Qt.alpha("#FFFFFF", 0.90);
+            }
+            return Theme.isDark() ? Qt.alpha("#FFFFFF", 0.16) : Qt.alpha("#FFFFFF", 0.70);
         }
 
-        Behavior on color { ColorAnimation { duration: 160 } }
         Behavior on border.color { ColorAnimation { duration: 160 } }
 
-        // 胶囊内部主题色拉手条 (极具辨识度，解决深色软件背景下隐形)
+        // 顶层微光反光线 (模拟玻璃受光面)
         Rectangle {
-            id: accentBar
-            anchors.left: edgeCapsuleRoot.isLeftEdge ? undefined : parent.left
-            anchors.right: edgeCapsuleRoot.isLeftEdge ? parent.right : undefined
-            anchors.leftMargin: edgeCapsuleRoot.isLeftEdge ? 0 : 2.5
-            anchors.rightMargin: edgeCapsuleRoot.isLeftEdge ? 2.5 : 0
-            anchors.verticalCenter: parent.verticalCenter
-            width: 2.5
-            height: 22
-            radius: 1.25
-            color: Theme.accentColor || "#4A90E2"
-            opacity: edgeCapsuleRoot.isHovered ? 1.0 : 0.80
-
-            Behavior on opacity { NumberAnimation { duration: 160 } }
+            anchors.top: parent.top
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.margins: 1
+            height: 1
+            topLeftRadius: capsuleBg.topLeftRadius
+            topRightRadius: capsuleBg.topRightRadius
+            color: Theme.isDark() ? Qt.alpha("#FFFFFF", 0.15) : Qt.alpha("#FFFFFF", 0.85)
         }
 
-        // "<" / ">" 图标指示符 (根据贴边方位自适应指向屏幕内侧)
-        Text {
-            id: arrowIcon
+        // 苹果标准抽屉拉手微胶囊 (Grip Indicator Pill)
+        Rectangle {
+            id: gripIndicator
             anchors.centerIn: parent
-            anchors.horizontalCenterOffset: edgeCapsuleRoot.isLeftEdge ? -1 : 1
-            text: edgeCapsuleRoot.isLeftEdge ? "›" : "‹"
-            font.pixelSize: 16
-            font.bold: true
+            width: 3
+            height: 24
+            radius: 1.5
             color: {
                 if (capsuleMouseArea.pressed) {
-                    return "#FFFFFF";
+                    return Theme.accentColor || "#007AFF";
                 }
                 if (edgeCapsuleRoot.isHovered) {
-                    return Theme.accentColor || "#4A90E2";
+                    return Theme.isDark() ? "#FFFFFF" : (Theme.accentColor || "#007AFF");
                 }
-                return Theme.isDark() ? "#FFFFFF" : "#333333";
+                return Theme.isDark() ? Qt.alpha("#FFFFFF", 0.40) : Qt.alpha("#000000", 0.28);
             }
 
             Behavior on color { ColorAnimation { duration: 160 } }

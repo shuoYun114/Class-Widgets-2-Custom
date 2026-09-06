@@ -55,18 +55,42 @@ Item {
         return [retractBtnItem.x, retractBtnItem.y, retractBtnItem.width, retractBtnItem.height];
     }
 
-    // 主面板背景 (原生轻量高性能 Fluent 材质，杜绝 FBO 离屏重绘与卡顿)
+    // 主面板背景 (苹果液态玻璃大面板质感，渐变光影 + 1px Specular Rim 物理微高光边框)
     Rectangle {
         id: panelBackground
         anchors.fill: parent
         radius: weeklyPanelRoot.cornerRadius
-        color: Theme.isDark()
-            ? Qt.alpha("#1A191E", 0.95 * weeklyPanelRoot.bgOpacity)
-            : Qt.alpha("#FBFBFF", 0.96 * weeklyPanelRoot.bgOpacity)
+
+        gradient: Gradient {
+            GradientStop {
+                position: 0.0
+                color: Theme.isDark()
+                    ? Qt.alpha("#24232C", 0.94 * weeklyPanelRoot.bgOpacity)
+                    : Qt.alpha("#FFFFFF", 0.95 * weeklyPanelRoot.bgOpacity)
+            }
+            GradientStop {
+                position: 1.0
+                color: Theme.isDark()
+                    ? Qt.alpha("#15141A", 0.90 * weeklyPanelRoot.bgOpacity)
+                    : Qt.alpha("#F0F0F5", 0.92 * weeklyPanelRoot.bgOpacity)
+            }
+        }
+
         border.width: 1
         border.color: Theme.isDark()
-            ? Qt.alpha("#FFFFFF", 0.18)
-            : Qt.alpha("#000000", 0.10)
+            ? Qt.alpha("#FFFFFF", 0.16)
+            : Qt.alpha("#FFFFFF", 0.70)
+
+        // 顶层微光反光
+        Rectangle {
+            anchors.top: parent.top
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.margins: 1
+            height: 1
+            radius: weeklyPanelRoot.cornerRadius
+            color: Theme.isDark() ? Qt.alpha("#FFFFFF", 0.14) : Qt.alpha("#FFFFFF", 0.90)
+        }
     }
 
     // 拦截点击避免穿透到背景外部收回区域
@@ -78,36 +102,38 @@ Item {
     // 面板内部主布局
     ColumnLayout {
         anchors.fill: parent
-        anchors.margins: 18
-        spacing: 12
+        anchors.margins: 16
+        spacing: 10
 
         // ==========================================
-        // 顶部标题栏与关闭
+        // 顶部极简标题栏
         // ==========================================
         RowLayout {
             Layout.fillWidth: true
-            Layout.preferredHeight: 36
+            Layout.preferredHeight: 32
             spacing: 10
 
+            // 极简微光小点
             Rectangle {
-                width: 6
-                height: 18
-                radius: 3
-                color: Theme.accentColor || "#4A90E2"
+                width: 4
+                height: 4
+                radius: 2
+                color: Theme.accentColor || "#007AFF"
             }
 
             Text {
-                text: "全周课表矩阵"
-                font.pixelSize: 16
+                text: "全周课表"
+                font.pixelSize: 15
                 font.bold: true
-                color: Theme.isDark() ? "#FFFFFF" : "#1A1A1A"
+                color: Theme.isDark() ? "#F5F5F7" : "#1D1D1F"
             }
 
+            // 极简周数微胶囊
             Rectangle {
-                radius: 10
-                height: 20
-                width: weekBadgeText.implicitWidth + 16
-                color: Theme.isDark() ? Qt.alpha("#FFFFFF", 0.08) : Qt.alpha("#000000", 0.06)
+                radius: 9
+                height: 18
+                width: weekBadgeText.implicitWidth + 14
+                color: Theme.isDark() ? Qt.alpha("#FFFFFF", 0.07) : Qt.alpha("#000000", 0.05)
 
                 Text {
                     id: weekBadgeText
@@ -116,27 +142,46 @@ Item {
                         var w = AppCentral.scheduleRuntime ? AppCentral.scheduleRuntime.currentWeek : 1;
                         return "第 " + w + " 周";
                     }
-                    font.pixelSize: 11
-                    color: Theme.isDark() ? "#BBBBBB" : "#555555"
+                    font.pixelSize: 10
+                    color: Theme.isDark() ? "#9898A0" : "#6E6E73"
                 }
             }
 
             Item { Layout.fillWidth: true }
 
-            // 顶部关闭小按钮
+            // 顶部关闭微按钮 (极细矢量叉叉，替代生硬字符 ✕)
             Rectangle {
-                width: 28
-                height: 28
-                radius: 14
+                width: 26
+                height: 26
+                radius: 13
                 color: closeHoverArea.containsMouse
-                    ? (Theme.isDark() ? Qt.alpha("#FFFFFF", 0.15) : Qt.alpha("#000000", 0.10))
-                    : (Theme.isDark() ? Qt.alpha("#FFFFFF", 0.06) : Qt.alpha("#000000", 0.04))
+                    ? (Theme.isDark() ? Qt.alpha("#FFFFFF", 0.12) : Qt.alpha("#000000", 0.08))
+                    : (Theme.isDark() ? Qt.alpha("#FFFFFF", 0.05) : Qt.alpha("#000000", 0.04))
 
-                Text {
+                Canvas {
                     anchors.centerIn: parent
-                    text: "✕"
-                    font.pixelSize: 13
-                    color: Theme.isDark() ? "#CCCCCC" : "#555555"
+                    width: 10
+                    height: 10
+                    onPaint: {
+                        var ctx = getContext("2d");
+                        ctx.clearRect(0, 0, width, height);
+                        ctx.strokeStyle = closeHoverArea.containsMouse
+                            ? (Theme.isDark() ? "#FFFFFF" : "#1D1D1F")
+                            : (Theme.isDark() ? "#A0A0A6" : "#6E6E73");
+                        ctx.lineWidth = 1.4;
+                        ctx.lineCap = "round";
+                        ctx.beginPath();
+                        ctx.moveTo(1, 1);
+                        ctx.lineTo(9, 9);
+                        ctx.moveTo(9, 1);
+                        ctx.lineTo(1, 9);
+                        ctx.stroke();
+                    }
+
+                    Connections {
+                        target: closeHoverArea
+                        function onContainsMouseChanged() { parent.children[0].requestPaint(); }
+                    }
                 }
 
                 MouseArea {
@@ -149,11 +194,11 @@ Item {
             }
         }
 
-        // 分割线
+        // 分隔微线 (极细半透明)
         Rectangle {
             Layout.fillWidth: true
             Layout.preferredHeight: 1
-            color: Theme.isDark() ? Qt.alpha("#FFFFFF", 0.10) : Qt.alpha("#000000", 0.08)
+            color: Theme.isDark() ? Qt.alpha("#FFFFFF", 0.08) : Qt.alpha("#000000", 0.06)
         }
 
         // ==========================================
@@ -168,12 +213,12 @@ Item {
             Repeater {
                 model: 7
 
-                // 单天纵向列
+                // 单天纵向列容器
                 Rectangle {
                     id: dayColumnRect
                     Layout.fillWidth: true
                     Layout.fillHeight: true
-                    radius: 12
+                    radius: 10
 
                     readonly property int dayIndex: index + 1 // 1 到 7
                     readonly property bool isToday: {
@@ -187,27 +232,28 @@ Item {
                         return [];
                     }
 
+                    // 柔和微底色与边框 (今天采用低饱和微光染色，绝不涂大面积纯色块)
                     color: isToday
-                        ? (Theme.isDark() ? Qt.alpha("#FFFFFF", 0.06) : Qt.alpha(Theme.accentColor || "#4A90E2", 0.08))
+                        ? (Theme.isDark() ? Qt.alpha("#FFFFFF", 0.05) : Qt.alpha(Theme.accentColor || "#007AFF", 0.05))
                         : (Theme.isDark() ? Qt.alpha("#FFFFFF", 0.02) : Qt.alpha("#000000", 0.02))
-                    border.width: isToday ? 1.5 : 1
+                    border.width: 1
                     border.color: isToday
-                        ? (Theme.accentColor || "#4A90E2")
-                        : (Theme.isDark() ? Qt.alpha("#FFFFFF", 0.08) : Qt.alpha("#000000", 0.06))
+                        ? Qt.alpha(Theme.accentColor || "#007AFF", 0.35)
+                        : (Theme.isDark() ? Qt.alpha("#FFFFFF", 0.06) : Qt.alpha("#000000", 0.05))
 
                     ColumnLayout {
                         anchors.fill: parent
                         anchors.margins: 4
                         spacing: 4
 
-                        // 星期标头
+                        // 星期标头微胶囊
                         Rectangle {
                             Layout.fillWidth: true
-                            Layout.preferredHeight: 26
-                            radius: 7
+                            Layout.preferredHeight: 24
+                            radius: 6
                             color: dayColumnRect.isToday
-                                ? (Theme.accentColor || "#4A90E2")
-                                : (Theme.isDark() ? Qt.alpha("#FFFFFF", 0.06) : Qt.alpha("#000000", 0.05))
+                                ? (Theme.isDark() ? Qt.alpha(Theme.accentColor || "#007AFF", 0.28) : Qt.alpha(Theme.accentColor || "#007AFF", 0.16))
+                                : (Theme.isDark() ? Qt.alpha("#FFFFFF", 0.04) : Qt.alpha("#000000", 0.03))
 
                             RowLayout {
                                 anchors.centerIn: parent
@@ -218,16 +264,16 @@ Item {
                                     font.pixelSize: 11
                                     font.bold: dayColumnRect.isToday
                                     color: dayColumnRect.isToday
-                                        ? "#FFFFFF"
-                                        : (Theme.isDark() ? "#E0E0E0" : "#333333")
+                                        ? (Theme.isDark() ? "#FFFFFF" : (Theme.accentColor || "#007AFF"))
+                                        : (Theme.isDark() ? "#C0C0C6" : "#48484A")
                                 }
 
                                 Rectangle {
                                     visible: dayColumnRect.isToday
-                                    width: 4
-                                    height: 4
-                                    radius: 2
-                                    color: "#FFFFFF"
+                                    width: 3
+                                    height: 3
+                                    radius: 1.5
+                                    color: Theme.isDark() ? "#FFFFFF" : (Theme.accentColor || "#007AFF")
                                 }
                             }
                         }
@@ -264,19 +310,30 @@ Item {
                                 radius: 7
 
                                 readonly property bool isCurrent: modelData.isCurrent || false
-                                readonly property color itemColor: modelData.color || "#4A90E2"
+                                readonly property color itemColor: modelData.color || "#007AFF"
 
                                 color: {
                                     if (isCurrent) {
-                                        return Theme.isDark() ? Qt.alpha(itemColor, 0.30) : Qt.alpha(itemColor, 0.18);
+                                        return Theme.isDark() ? Qt.alpha(itemColor, 0.18) : Qt.alpha(itemColor, 0.12);
                                     }
                                     if (cellMouseArea.containsMouse) {
-                                        return Theme.isDark() ? Qt.alpha("#FFFFFF", 0.10) : Qt.alpha("#000000", 0.06);
+                                        return Theme.isDark() ? Qt.alpha("#FFFFFF", 0.08) : Qt.alpha("#000000", 0.05);
                                     }
-                                    return Theme.isDark() ? Qt.alpha("#FFFFFF", 0.04) : Qt.alpha("#000000", 0.03);
+                                    return Theme.isDark() ? Qt.alpha("#FFFFFF", 0.03) : Qt.alpha("#000000", 0.02);
                                 }
-                                border.width: isCurrent ? 1.5 : (cellMouseArea.containsMouse ? 1 : 0)
-                                border.color: isCurrent ? itemColor : (Theme.isDark() ? Qt.alpha("#FFFFFF", 0.20) : Qt.alpha("#000000", 0.10))
+                                border.width: 1
+                                border.color: {
+                                    if (isCurrent) {
+                                        return Qt.alpha(itemColor, 0.38);
+                                    }
+                                    if (cellMouseArea.containsMouse) {
+                                        return Theme.isDark() ? Qt.alpha("#FFFFFF", 0.15) : Qt.alpha("#000000", 0.10);
+                                    }
+                                    return Theme.isDark() ? Qt.alpha("#FFFFFF", 0.05) : Qt.alpha("#000000", 0.03);
+                                }
+
+                                Behavior on color { ColorAnimation { duration: 150 } }
+                                Behavior on border.color { ColorAnimation { duration: 150 } }
 
                                 MouseArea {
                                     id: cellMouseArea
@@ -311,7 +368,7 @@ Item {
                                         elide: Text.ElideRight
                                         color: isCurrent
                                             ? (Theme.isDark() ? "#FFFFFF" : itemColor)
-                                            : (Theme.isDark() ? "#E5E5E5" : "#222222")
+                                            : (Theme.isDark() ? "#EDEDED" : "#1D1D1F")
                                     }
 
                                     Text {
@@ -320,8 +377,8 @@ Item {
                                         font.pixelSize: 9
                                         elide: Text.ElideRight
                                         color: isCurrent
-                                            ? (Theme.isDark() ? "#D8D8D8" : "#444444")
-                                            : (Theme.isDark() ? "#8C8C8C" : "#767676")
+                                            ? (Theme.isDark() ? "#C4C4C8" : "#48484A")
+                                            : (Theme.isDark() ? "#8E8E93" : "#6E6E73")
                                     }
                                 }
                             }
@@ -333,8 +390,7 @@ Item {
     }
 
     // ==========================================
-    // 左侧单一收回操作按钮 (R3 规范)
-    // 展开状态下左侧操作按钮转为单一收回按钮
+    // 左侧单一收回操作按钮 (苹果液态玻璃材质 + 极细 Chevron 矢量折叠微图标)
     // ==========================================
     Item {
         id: retractBtnItem
@@ -344,40 +400,78 @@ Item {
         anchors.verticalCenter: parent.verticalCenter
         z: 999
 
-        DropShadow {
-            anchors.fill: retractBtnBg
-            horizontalOffset: -2
-            verticalOffset: 4
-            radius: 8
-            samples: 8
-            cached: true
-            fast: true
-            color: Theme.isDark() ? Qt.alpha("#000000", 0.45) : Qt.alpha("#000000", 0.15)
-            source: retractBtnBg
-        }
-
         Rectangle {
             id: retractBtnBg
             anchors.fill: parent
             radius: 21
-            color: {
-                if (retractMouseArea.pressed) {
-                    return Theme.isDark() ? Qt.alpha("#3A3840", 0.95) : Qt.alpha("#E5E5EA", 0.95);
-                }
-                if (retractMouseArea.containsMouse) {
-                    return Theme.isDark() ? Qt.alpha("#2E2D34", 0.92) : Qt.alpha("#F2F2F7", 0.95);
-                }
-                return Theme.isDark() ? Qt.alpha("#212026", 0.88) : Qt.alpha("#FCFBFF", 0.92);
-            }
-            border.width: 1
-            border.color: Theme.isDark() ? Qt.alpha("#FFFFFF", 0.22) : Qt.alpha("#000000", 0.10)
 
-            // 向右收回图标
-            Text {
+            gradient: Gradient {
+                GradientStop {
+                    position: 0.0
+                    color: {
+                        if (retractMouseArea.pressed) return Theme.isDark() ? Qt.alpha("#3A3844", 0.95) : Qt.alpha("#E5E5EA", 0.95);
+                        if (retractMouseArea.containsMouse) return Theme.isDark() ? Qt.alpha("#2E2D36", 0.92) : Qt.alpha("#F2F2F7", 0.95);
+                        return Theme.isDark() ? Qt.alpha("#26252E", 0.88) : Qt.alpha("#FFFFFF", 0.92);
+                    }
+                }
+                GradientStop {
+                    position: 1.0
+                    color: {
+                        if (retractMouseArea.pressed) return Theme.isDark() ? Qt.alpha("#2E2D36", 0.95) : Qt.alpha("#D1D1D6", 0.95);
+                        if (retractMouseArea.containsMouse) return Theme.isDark() ? Qt.alpha("#201F26", 0.92) : Qt.alpha("#E5E5EA", 0.95);
+                        return Theme.isDark() ? Qt.alpha("#17161D", 0.82) : Qt.alpha("#ECECF2", 0.88);
+                    }
+                }
+            }
+
+            border.width: 1
+            border.color: retractMouseArea.containsMouse
+                ? (Theme.isDark() ? Qt.alpha("#FFFFFF", 0.35) : Qt.alpha("#FFFFFF", 0.90))
+                : (Theme.isDark() ? Qt.alpha("#FFFFFF", 0.16) : Qt.alpha("#FFFFFF", 0.70))
+
+            Behavior on border.color { ColorAnimation { duration: 150 } }
+
+            // 顶层微光反光
+            Rectangle {
+                anchors.top: parent.top
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.margins: 1
+                height: 1
+                radius: parent.radius
+                color: Theme.isDark() ? Qt.alpha("#FFFFFF", 0.15) : Qt.alpha("#FFFFFF", 0.85)
+            }
+
+            // 极细 Chevron 矢量收回微图标 (替代字符 ❯)
+            Item {
                 anchors.centerIn: parent
-                text: "❯"
-                font.pixelSize: 16
-                color: retractMouseArea.containsMouse ? (Theme.accentColor || "#4A90E2") : (Theme.isDark() ? "#EDEDED" : "#333333")
+                width: 14
+                height: 14
+
+                readonly property color iconColor: retractMouseArea.containsMouse ? (Theme.accentColor || "#007AFF") : (Theme.isDark() ? "#EDEDED" : "#1D1D1F")
+
+                Canvas {
+                    id: retractIconCanvas
+                    anchors.fill: parent
+                    onPaint: {
+                        var ctx = getContext("2d");
+                        ctx.clearRect(0, 0, width, height);
+                        ctx.strokeStyle = parent.iconColor;
+                        ctx.lineWidth = 1.6;
+                        ctx.lineCap = "round";
+                        ctx.lineJoin = "round";
+                        ctx.beginPath();
+                        ctx.moveTo(5, 3);
+                        ctx.lineTo(10, 7);
+                        ctx.lineTo(5, 11);
+                        ctx.stroke();
+                    }
+
+                    Connections {
+                        target: retractMouseArea
+                        function onContainsMouseChanged() { retractIconCanvas.requestPaint(); }
+                    }
+                }
             }
         }
 
@@ -389,17 +483,17 @@ Item {
             onClicked: weeklyPanelRoot.requestClose()
         }
 
-        // 提示卡
+        // 提示卡 (苹果半透明胶囊气泡)
         Rectangle {
             anchors.right: parent.left
             anchors.rightMargin: 8
             anchors.verticalCenter: parent.verticalCenter
-            width: retractTipText.implicitWidth + 14
+            width: retractTipText.implicitWidth + 16
             height: 24
-            radius: 6
-            color: Theme.isDark() ? "#2D2C33" : "#F7F7F7"
+            radius: 8
+            color: Theme.isDark() ? Qt.alpha("#26252C", 0.95) : Qt.alpha("#FFFFFF", 0.96)
             border.width: 1
-            border.color: Theme.isDark() ? Qt.alpha("#FFFFFF", 0.15) : Qt.alpha("#000000", 0.08)
+            border.color: Theme.isDark() ? Qt.alpha("#FFFFFF", 0.16) : Qt.alpha("#FFFFFF", 0.70)
             opacity: retractMouseArea.containsMouse ? 1.0 : 0.0
             visible: opacity > 0.01
 
@@ -410,7 +504,7 @@ Item {
                 anchors.centerIn: parent
                 text: "收回全周大面板"
                 font.pixelSize: 11
-                color: Theme.isDark() ? "#EDEDED" : "#222222"
+                color: Theme.isDark() ? "#EDEDED" : "#1D1D1F"
             }
         }
     }
