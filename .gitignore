@@ -190,4 +190,7 @@ RinUI
 .reasonix/
 
 # Agents
-.agents/
+.agents/
+
+# Archive files
+*.zip
