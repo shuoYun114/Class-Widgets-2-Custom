@@ -32,6 +32,16 @@ def run_build(skip_pyinstaller=False):
     dist_dir = root_dir / "dist" / "Class Widgets 2"
     exe_file = dist_dir / "Class Widgets 2.exe"
 
+    # 自动释放被旧实例占用的 exe 与动态库
+    try:
+        subprocess.run(
+            ["taskkill", "/F", "/IM", "Class Widgets 2.exe"],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+    except Exception:
+        pass
+
     if not skip_pyinstaller:
         # 1. 确保必要目录和数据存在
         assets_icon = root_dir / "assets" / "images" / "logo.ico"
@@ -57,6 +67,7 @@ def run_build(skip_pyinstaller=False):
             "-m",
             "PyInstaller",
             "--noconsole",
+            "--noupx",
             f"--icon={str(assets_icon)}",
             *add_data_args,
             "--paths=.",
@@ -96,6 +107,21 @@ def run_build(skip_pyinstaller=False):
             shutil.rmtree(dst_platforms)
         shutil.copytree(src_platforms, dst_platforms)
         print(f"[OK] 成功同步平台插件至根目录: {dst_platforms}")
+
+    # 2.6 生成“创建桌面快捷方式.bat”，引导用户安全创建快捷方式，防止将 exe 单独拖离解压目录
+    shortcut_bat = dist_dir / "创建桌面快捷方式.bat"
+    shortcut_bat_content = (
+        "@echo off\r\n"
+        "chcp 65001 >nul\r\n"
+        "echo 正在为 Class Widgets 2 创建桌面快捷方式...\r\n"
+        "powershell -NoProfile -Command \"$ws = New-Object -ComObject WScript.Shell; $s = $ws.CreateShortcut([System.IO.Path]::Combine([Environment]::GetFolderPath('Desktop'), 'Class Widgets 2.lnk')); $s.TargetPath = [System.IO.Path]::Combine($PSScriptRoot, 'Class Widgets 2.exe'); $s.WorkingDirectory = $PSScriptRoot; $s.Save()\"\r\n"
+        "echo [成功] 桌面快捷方式已成功创建到您的桌面！\r\n"
+        "timeout /t 2 >nul\r\n"
+    )
+    with open(shortcut_bat, "w", encoding="gbk", errors="ignore") as f:
+        f.write(shortcut_bat_content)
+    print(f"[OK] 成功生成桌面快捷方式助手: {shortcut_bat}")
+
 
 
     # 3. 冗余 Qt 动态库安全裁剪 (依据官方 scripts/qt_files_clean-Windows.json)

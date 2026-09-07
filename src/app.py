@@ -40,9 +40,29 @@ if sys.platform == "win32":
     candidate_dirs = []
     if getattr(sys, "frozen", False):
         base_dir = os.path.dirname(sys.executable)
+        pyside_candidate = os.path.join(base_dir, "PySide6")
+        platforms_candidate = os.path.join(base_dir, "platforms")
+        nested_platforms = os.path.join(pyside_candidate, "plugins", "platforms")
+
+        # 若依赖文件夹脱节（例如直接在压缩包内双击或单独将 exe 复制到其他位置），弹出清晰中文指引并退出
+        if not (os.path.isdir(platforms_candidate) or os.path.isdir(nested_platforms)):
+            try:
+                import ctypes
+                msg = (
+                    "【Class Widgets 2 启动提示】\n\n"
+                    "程序检测到当前运行环境缺失依赖文件，无法正常初始化图形界面。\n\n"
+                    "常见原因与解决办法：\n"
+                    "1. 【尚未完全解压】：如果您是在 ZIP 压缩包内部直接双击运行的，请务必先将压缩包【全部解压】到一个普通文件夹中后再打开；\n"
+                    "2. 【单独移出可执行程序】：请勿将 Class Widgets 2.exe 单独移出解压目录。如果需要在桌面快速打开，请右键点击 Class Widgets 2.exe -> 选择【发送到】 -> 【桌面快捷方式】。"
+                )
+                ctypes.windll.user32.MessageBoxW(0, msg, "Class Widgets 2", 0x10 | 0x0)
+            except Exception:
+                pass
+            sys.exit(1)
+
         candidate_dirs.extend([
             base_dir,
-            os.path.join(base_dir, "PySide6"),
+            pyside_candidate,
             os.path.join(base_dir, "shiboken6"),
         ])
     else:
