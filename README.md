@@ -27,15 +27,11 @@
 </div>
 
 > [!NOTE]
-> 我们已经正式发布第一个 Stable 版本！
-> 欢迎到我们的 GitHub 页面提交问题反馈，谢谢！
->
-> 对于在 GitHub 下载过慢的用户，可以在下方的其他第三方链接下载您需要的版本，
-> 网盘中的文件会自动随版本发行而更新，也可使用 Class Widgets 中内置的更新功能以更新。
+> **Class-Widgets-2-Custom 定制开发版**  
+> 本分支基于 Class-Widgets-2 进行了深度定制重构：引入**苹果液态玻璃极简美学**、全天课程自适应一屏平铺、侧边栏全维度自定义与主设置面板打通、全自包含绿色打包构建。
 > 
-> <div align="center">
-> <a href="https://github.com/RinLit-233-shiroko/Class-Widgets-2/releases">Release 页面</a> | <a href="https://dl.gemen.pp.ua">OneDrive</a> | <s><a href="https://cw.rinlit.cn/">官方网站（在建）</a></s>
-> </div>
+> GitHub 源码仓库：[https://github.com/shuoYun114/Class-Widgets-2-Custom](https://github.com/shuoYun114/Class-Widgets-2-Custom)  
+> 详细交接与技术文档请参见：[PROJECT_HANDOVER.md](PROJECT_HANDOVER.md)
 
 
 ## 概述

@@ -488,6 +488,34 @@ class ScheduleRuntime(QObject):
         if now >= end: return 1
         return round((now - start).total_seconds() / (end - start).total_seconds(), 2)
 
+    def _format_next_entry_notification(self, entry) -> Optional[str]:
+        """格式化下一节课程/活动的通知文案，集中管理下一节课提取逻辑"""
+        if not entry:
+            return None
+        try:
+            subject_dict = None
+            if self.schedule and hasattr(self.schedule, 'subjects') and self.schedule.subjects:
+                sub = self.services.get_subject(entry.subjectId, self.schedule.subjects)
+                if sub:
+                    subject_dict = sub.model_dump() if hasattr(sub, 'model_dump') else sub.__dict__
+
+            if subject_dict and 'name' in subject_dict:
+                subject_name = subject_dict['name']
+                is_local = subject_dict.get('isLocalClassroom', True)
+                if is_local:
+                    return QCoreApplication.translate("ScheduleRuntime", "Next: {}").format(subject_name)
+                location = subject_dict.get('location', '')
+                if location:
+                    return QCoreApplication.translate("ScheduleRuntime", "Next: {} at {}").format(subject_name, location)
+                return QCoreApplication.translate("ScheduleRuntime", "Next: {} (Off-site)").format(subject_name)
+
+            next_title = getattr(entry, 'title', '')
+            if next_title:
+                return QCoreApplication.translate("ScheduleRuntime", "Next: {}").format(next_title)
+        except (IndexError, AttributeError, TypeError) as e:
+            logger.warning(f"Error preparing next entry notification: {e}")
+        return None
+
     def _update_notify(self) -> None:
         if self.previous_entry != self.current_entry:
             self.previous_entry = self.current_entry
@@ -522,76 +550,11 @@ class ScheduleRuntime(QObject):
                     
             elif status == EntryType.PREPARATION.value and self.next_entries:
                  title = QCoreApplication.translate("ScheduleRuntime", "Intermission")
-                 message = None
-                 
-                 try:
-                     next_entry = self.next_entries[0]
-                     subject_dict = None
-                     
-                     if self.schedule and hasattr(self.schedule, 'subjects') and self.schedule.subjects:
-                         sub = self.services.get_subject(next_entry.subjectId, self.schedule.subjects)
-                         if sub:
-                             subject_dict = sub.model_dump() if hasattr(sub, 'model_dump') else sub.__dict__
-                     
-                     if subject_dict and 'name' in subject_dict:
-                         subject_name = subject_dict['name']
-                         is_local = subject_dict.get('isLocalClassroom', True)
-                         
-                         if is_local:
-                             message = QCoreApplication.translate("ScheduleRuntime", "Next: {}").format(subject_name)
-                         else:
-                             location = subject_dict.get('location', '')
-                             if location:
-                                 message = QCoreApplication.translate("ScheduleRuntime", "Next: {} at {}").format(subject_name, location)
-                             else:
-                                 message = QCoreApplication.translate("ScheduleRuntime", "Next: {} (Off-site)").format(subject_name)
-                     else:
-                         next_title = getattr(next_entry, 'title', '')
-                         if next_title:
-                             message = QCoreApplication.translate("ScheduleRuntime", "Next: {}").format(next_title)
-                         
-                 except (IndexError, AttributeError, TypeError) as e:
-                     logger.warning(f"Error preparing preparation notification: {e}")
-                     # Skip notification if we can't get proper information
-                     message = None
+                 message = self._format_next_entry_notification(self.next_entries[0])
                     
             elif status == EntryType.BREAK.value:
                  title = QCoreApplication.translate("ScheduleRuntime", "Recess")
-                 
-                 if self.next_entries:
-                     message = None
-                     try:
-                         next_entry = self.next_entries[0]
-                         subject_dict = None
-                         
-                         if self.schedule and hasattr(self.schedule, 'subjects') and self.schedule.subjects:
-                             sub = self.services.get_subject(next_entry.subjectId, self.schedule.subjects)
-                             if sub:
-                                 subject_dict = sub.model_dump() if hasattr(sub, 'model_dump') else sub.__dict__
-                         
-                         if subject_dict and 'name' in subject_dict:
-                             subject_name = subject_dict['name']
-                             is_local = subject_dict.get('isLocalClassroom', True)
-                             
-                             if is_local:
-                                 message = QCoreApplication.translate("ScheduleRuntime", "Next: {}").format(subject_name)
-                             else:
-                                 location = subject_dict.get('location', '')
-                                 if location:
-                                     message = QCoreApplication.translate("ScheduleRuntime", "Next: {} at {}").format(subject_name, location)
-                                 else:
-                                     message = QCoreApplication.translate("ScheduleRuntime", "Next: {} (Off-site)").format(subject_name)
-                         else:
-                             next_title = getattr(next_entry, 'title', '')
-                             if next_title:
-                                 message = QCoreApplication.translate("ScheduleRuntime", "Next: {}").format(next_title)
-                             
-                     except (IndexError, AttributeError, TypeError) as e:
-                         logger.warning(f"Error preparing break notification: {e}")
-                         # Skip notification if we can't get proper information
-                         message = None
-                 else:
-                     message = QCoreApplication.translate("ScheduleRuntime", "Enjoy your break")
+                 message = self._format_next_entry_notification(self.next_entries[0]) if self.next_entries else QCoreApplication.translate("ScheduleRuntime", "Enjoy your break")
                     
             elif status == EntryType.FREE.value:
                 title = QCoreApplication.translate("ScheduleRuntime", "Free Time")

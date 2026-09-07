@@ -1,5 +1,8 @@
 # Class-Widgets-2-Custom 项目开发与交接说明文档 (Project Handover Documentation)
 
+> **项目官方 GitHub 仓库**：[https://github.com/shuoYun114/Class-Widgets-2-Custom](https://github.com/shuoYun114/Class-Widgets-2-Custom)  
+> **主分支状态**：`main` 分支保持最新与全量同步。接手开发者可直接通过 `git clone` 或配置 remote 进行后续迭代开发。
+
 ---
 
 ## 一、 项目背景与开发目标 (Project Goals)
@@ -48,7 +51,7 @@
 
 ## 三、 我们已经修改了什么 / 核心改动明细 (Completed Work)
 
-### 1. 侧边栏液态玻璃重构 (`src/qml/ClassWidgets/Sidebar.qml`)
+### 1. 侧边栏液态玻璃重构 (`src/qml/ClassWidgets/Components/sidebar/ScheduleSidebar.qml`)
 - **视觉风格焕新**：
   - 移除了原有的粗暴分割线与实心死黑底色；
   - 构造了层叠式液态玻璃容器：外层微弱环境发光描边（`border.color: Qt.rgba(1, 1, 1, 0.15)`）+ 半透明渐变背景层（`Qt.rgba(1, 1, 1, 0.08)` 到 `0.03`）+ 背景动态高斯模糊；
@@ -105,7 +108,7 @@
 ### 2. 接手开发者后续可关注的优化方向 (Roadmap)
 1. **超小屏幕或极低分辨率适配**：
    - 目前在 1080P、2K、4K 屏幕上全天课程无需滚动即可完整显示；
-   - 若用户使用的是 1366x768 等极低分辨率小屏幕笔记本，可考虑在 `Sidebar.qml` 中增加根据 `Screen.height` 动态缩放字体与内边距的计算系数；
+   - 若用户使用的是 1366x768 等极低分辨率小屏幕笔记本，可考虑在 `ScheduleSidebar.qml` 中增加根据 `Screen.height` 动态缩放字体与内边距的计算系数；
 2. **更多液态玻璃预设风格**：
    - 可在设置页面中进一步扩展深色（Dark Liquid）、极光浅色（Light Frosty）等更多材质主题；
 3. **插件生态开发**：
