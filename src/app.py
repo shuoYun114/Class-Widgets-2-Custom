@@ -44,6 +44,20 @@ if sys.platform == "win32":
         platforms_candidate = os.path.join(base_dir, "platforms")
         nested_platforms = os.path.join(pyside_candidate, "plugins", "platforms")
 
+        # 强制矫正当前工作目录为应用程序根目录
+        try:
+            os.chdir(base_dir)
+        except Exception:
+            pass
+
+        # 底层调用 SetDllDirectoryW，将 PySide6 目录注入 Windows 核心 DLL 搜索范围
+        # 确保纯净机上 qwindows.dll 解析 MSVCP140.dll、Qt6Core.dll 等依赖时绝不报 126
+        try:
+            import ctypes
+            ctypes.windll.kernel32.SetDllDirectoryW(pyside_candidate)
+        except Exception:
+            pass
+
         # 若依赖文件夹脱节（例如直接在压缩包内双击或单独将 exe 复制到其他位置），弹出清晰中文指引并退出
         if not (os.path.isdir(platforms_candidate) or os.path.isdir(nested_platforms)):
             try:
@@ -92,14 +106,11 @@ if sys.platform == "win32":
     if new_dirs:
         os.environ["PATH"] = os.pathsep.join(new_dirs) + os.pathsep + existing_path
 
-    # 3. 显式设置 Qt 插件与平台插件搜索路径
+    # 3. 显式设置 Qt 插件目录
     for d in candidate_dirs:
         plugins_candidate = os.path.join(d, "plugins")
         if os.path.isdir(plugins_candidate):
             os.environ.setdefault("QT_PLUGIN_PATH", plugins_candidate)
-            platforms_candidate = os.path.join(plugins_candidate, "platforms")
-            if os.path.isdir(platforms_candidate):
-                os.environ.setdefault("QT_QPA_PLATFORM_PLUGIN_PATH", platforms_candidate)
             break
 
 
@@ -120,9 +131,30 @@ from PySide6.QtWidgets import QApplication
 
 if __name__ == "__main__":
     multiprocessing.freeze_support()
-    sys.argv[1:] = wait_for_process_exit(sys.argv[1:])
-    app = QApplication(sys.argv)
-    app.setQuitOnLastWindowClosed(False)
-    instance = AppCentral()
-    instance.run()
-    app.exec()
+    try:
+        sys.argv[1:] = wait_for_process_exit(sys.argv[1:])
+        app = QApplication(sys.argv)
+        app.setQuitOnLastWindowClosed(False)
+        instance = AppCentral()
+        instance.run()
+        sys.exit(app.exec())
+    except Exception as e:
+        import traceback
+        err_msg = traceback.format_exc()
+        try:
+            from loguru import logger
+            logger.critical(f"Fatal application error: {err_msg}")
+        except Exception:
+            pass
+        if sys.platform == "win32":
+            try:
+                import ctypes
+                ctypes.windll.user32.MessageBoxW(
+                    0,
+                    f"Class Widgets 2 遇到严重错误无法继续运行：\n\n{err_msg}",
+                    "Class Widgets 2 - 启动异常",
+                    0x10 | 0x0
+                )
+            except Exception:
+                pass
+        sys.exit(1)

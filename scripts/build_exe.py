@@ -116,7 +116,7 @@ def run_build(skip_pyinstaller=False):
         "echo 正在为 Class Widgets 2 创建桌面快捷方式...\r\n"
         "powershell -NoProfile -Command \"$ws = New-Object -ComObject WScript.Shell; $s = $ws.CreateShortcut([System.IO.Path]::Combine([Environment]::GetFolderPath('Desktop'), 'Class Widgets 2.lnk')); $s.TargetPath = [System.IO.Path]::Combine($PSScriptRoot, 'Class Widgets 2.exe'); $s.WorkingDirectory = $PSScriptRoot; $s.Save()\"\r\n"
         "echo [成功] 桌面快捷方式已成功创建到您的桌面！\r\n"
-        "timeout /t 2 >nul\r\n"
+        "ping 127.0.0.1 -n 2 >nul\r\n"
     )
     with open(shortcut_bat, "w", encoding="gbk", errors="ignore") as f:
         f.write(shortcut_bat_content)
@@ -146,6 +146,62 @@ def run_build(skip_pyinstaller=False):
             print(f"跳过清理 (非致命): {e}")
     else:
         print("[3/4] 跳过动态库裁剪 (直接保留完整依赖)")
+
+    # 3.5 纯净 Windows 依赖加固：同步镜像所有关键 VC++ 运行时与 Qt 核心 DLL 至根目录和 platforms 目录
+    # 彻底杜绝纯净机（无 VC++ Redistributable）下 qwindows.dll 报告 Error 126
+    if pyside_dir.exists():
+        synced_dlls = 0
+        for dll_file in pyside_dir.glob("*.dll"):
+            target_file = dist_dir / dll_file.name
+            if not target_file.exists():
+                shutil.copy2(dll_file, target_file)
+                synced_dlls += 1
+        print(f"[OK] 成功镜像 {synced_dlls} 个关键 DLL 到应用根目录，达成完全自包含")
+
+        # 将平台插件的核心前置依赖也镜像至 platforms 目录
+        dst_platforms = dist_dir / "platforms"
+        if dst_platforms.exists():
+            for critical_name in ["MSVCP140.dll", "MSVCP140_1.dll", "MSVCP140_2.dll", "VCRUNTIME140.dll", "VCRUNTIME140_1.dll", "Qt6Core.dll", "Qt6Gui.dll"]:
+                c_src = pyside_dir / critical_name
+                c_dst = dst_platforms / critical_name
+                if c_src.exists() and not c_dst.exists():
+                    shutil.copy2(c_src, c_dst)
+            print("[OK] 成功向 platforms 注入前置运行时依赖")
+
+    # 3.6 生成便携安全启动器与诊断启动器（应对双击无响应或极端系统限制）
+    launcher_bat = dist_dir / "启动 Class Widgets.bat"
+    launcher_content = (
+        "@echo off\r\n"
+        "cd /d \"%~dp0\"\r\n"
+        "set \"PATH=%~dp0;%~dp0PySide6;%PATH%\"\r\n"
+        "start \"\" \"Class Widgets 2.exe\"\r\n"
+    )
+    with open(launcher_bat, "w", encoding="gbk", errors="ignore") as f:
+        f.write(launcher_content)
+
+    debug_bat = dist_dir / "启动并排查故障(显示控制台).bat"
+    debug_content = (
+        "@echo off\r\n"
+        "chcp 65001 >nul\r\n"
+        "cd /d \"%~dp0\"\r\n"
+        "echo ========================================================\r\n"
+        "echo 正在以诊断模式启动 Class Widgets 2...\r\n"
+        "echo 如果出现任何启动异常或缺少插件，控制台将显示详细追踪日志\r\n"
+        "echo ========================================================\r\n"
+        "set \"PATH=%~dp0;%~dp0PySide6;%PATH%\"\r\n"
+        "set QT_DEBUG_PLUGINS=1\r\n"
+        "\"Class Widgets 2.exe\"\r\n"
+        "if %errorlevel% neq 0 (\r\n"
+        "    echo.\r\n"
+        "    echo [错误提示] 程序异常退出，退出码: %errorlevel%\r\n"
+        "    echo 请将上方出现的提示或错误信息截图提供给开发者排查。\r\n"
+        "    echo.\r\n"
+        "    pause\r\n"
+        ")\r\n"
+    )
+    with open(debug_bat, "w", encoding="gbk", errors="ignore") as f:
+        f.write(debug_content)
+    print(f"[OK] 成功生成便捷启动器与诊断启动器")
 
     # 4. 压缩打包为 zip 文件便于分发
     zip_output = root_dir / "dist" / "ClassWidgets-2-Windows.zip"
