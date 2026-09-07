@@ -81,6 +81,23 @@ def run_build(skip_pyinstaller=False):
         sys.exit(1)
     print(f"[OK] 成功验证可执行文件: {exe_file}")
 
+    # 2.5 写入 qt.conf 并部署根目录 platforms 平台插件镜像，保障任何纯净 Windows 环境绝对可运行
+    qt_conf_file = dist_dir / "qt.conf"
+    qt_conf_content = "[Paths]\nPrefix = .\nPlugins = PySide6/plugins\nImports = PySide6/qml\nQml2Imports = PySide6/qml\n"
+    with open(qt_conf_file, "w", encoding="utf-8") as f:
+        f.write(qt_conf_content)
+    print(f"[OK] 成功生成 Qt 配置文件: {qt_conf_file}")
+
+    # 将平台插件同时镜像至应用程序根目录 platforms，提供双保险
+    src_platforms = dist_dir / "PySide6" / "plugins" / "platforms"
+    dst_platforms = dist_dir / "platforms"
+    if src_platforms.exists():
+        if dst_platforms.exists():
+            shutil.rmtree(dst_platforms)
+        shutil.copytree(src_platforms, dst_platforms)
+        print(f"[OK] 成功同步平台插件至根目录: {dst_platforms}")
+
+
     # 3. 冗余 Qt 动态库安全裁剪 (依据官方 scripts/qt_files_clean-Windows.json)
     clean_json = root_dir / "scripts" / "qt_files_clean-Windows.json"
     pyside_dir = dist_dir / "PySide6"
