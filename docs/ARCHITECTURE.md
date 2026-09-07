@@ -8,6 +8,10 @@
 
 ## 一、 全景分层系统架构图 (Full-Tier System Architecture)
 
+> 📷 **全景架构高清渲染图**：
+> 
+> ![全景四层解耦系统架构图](images/architecture.png)
+
 本项目采用清晰的四层解耦架构：**视图着色器层**、**Python/Qt 原生桥接层**、**核心中枢调度层**、以及**系统与自包含运行层**。系统架构图如下：
 
 ```mermaid
@@ -111,6 +115,10 @@ flowchart TD
 ---
 
 ## 三、 文件间依赖拓扑路线图 (File-Level Dependency Flow)
+
+> 📷 **核心文件与模块依赖路线高清图**：
+> 
+> ![核心文件依赖拓扑图](images/dependency_topology.png)
 
 系统的模块导入与数据流依赖严格自顶向下，严禁逆向耦合：
 
