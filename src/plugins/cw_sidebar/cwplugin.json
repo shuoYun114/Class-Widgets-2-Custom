@@ -6,6 +6,8 @@
   "api_version": "*",
   "entry": "sidebar.py",
   "description": "Desktop edge schedule capsule with full-week matrix panel",
+  "icon": "icon.png",
+  "readme": "README.md",
   "tags": [
     "schedule",
     "sidebar",

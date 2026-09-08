@@ -8,7 +8,10 @@ from typing import Optional
 from PySide6.QtCore import Slot, Signal, QCoreApplication, QObject
 from loguru import logger
 
-from src.core.plugin import CW2Plugin, PluginAPI
+try:
+    from ClassWidgets.SDK import CW2Plugin, PluginAPI
+except ImportError:
+    from src.core.plugin import CW2Plugin, PluginAPI
 
 
 META = {
