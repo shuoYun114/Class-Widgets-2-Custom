@@ -108,33 +108,38 @@
 
 ---
 
-## Code Layout
-```
 src/
 ├── core/
 │   ├── config/
-│   │   └── model.py                  # 扩展 PreferencesConfig (schedule_sidebar_enabled/collapsed)
+│   │   └── model.py                  # 扩展 PreferencesConfig 与 PluginsConfig 默认启用侧边栏插件
 │   ├── schedule/
 │   │   └── runtime.py                # 扩展 sidebarDaySchedule / sidebarWeekSchedule 响应式属性
 │   └── widgets/
-│       └── core.py                   # 更新 update_mask 计算 scheduleSidebar 的动态 QRegion
+│       └── core.py                   # update_mask 动态感知并计算 scheduleSidebar 的动态 QRegion
+├── plugins/
+│   └── cw_sidebar/                   # 【侧边课表栏插件模块】
+│       ├── __init__.py               # 导出 META 与 Plugin
+│       ├── sidebar.py                # 继承 CW2Plugin，管理生命周期、设置页与全局 Action
+│       ├── cwplugin.json             # 标准插件元信息文件（支持独立打包与分发）
+│       ├── pages/
+│       │   └── SidebarSettings.qml   # 插件独立设置界面
+│       └── qml/                      # 侧边栏 QML 完整套件与 qmldir
+│           ├── ScheduleSidebar.qml
+│           ├── DailyScheduleBar.qml
+│           ├── WeeklySchedulePanel.qml
+│           ├── EdgeRestoreCapsule.qml
+│           └── SidebarHoverButtons.qml
 └── qml/
-    ├── MainInterface.qml             # 挂载 ScheduleSidebar 顶层实例 (z: 1100)
+    ├── MainInterface.qml             # 采用 Loader 动态挂载 ScheduleSidebar 实例
     └── ClassWidgets/
-        ├── Components/
-        │   └── sidebar/
-        │       ├── ScheduleSidebar.qml       # 侧边栏总控容器、状态机与外部点击遮罩
-        │       ├── DailyScheduleBar.qml      # R1: 当天课表竖条胶囊与平滑滚动、气泡
-        │       ├── SidebarHoverButtons.qml   # R2: 悬浮双按钮与 300ms 延时缓冲
-        │       ├── WeeklySchedulePanel.qml   # R3: 全周网格矩阵大面板
-        │       └── EdgeRestoreCapsule.qml    # R4: 边缘 `<` 贴边小胶囊呼出按钮
-        └── pages/
-            └── settings/
-                └── General/
-                    └── Widgets.qml           # R5: 添加侧边栏启用开关卡片
+        └── Components/
+            └── sidebar/              # 保持向下兼容的 QML 组件导出
 tests/
 └── e2e/
+    ├── test_sidebar_plugin.py        # 插件生命周期、元数据与 Loader 遮罩自动化测试
     ├── test_sidebar_model.py         # 数据模型与整周矩阵单测
     ├── test_sidebar_mask.py          # 遮罩计算与穿透测试
-    └── test_sidebar_config.py        # 配置读写与持久化验证
+    ├── test_sidebar_config.py        # 配置读写与持久化验证
+    └── test_sidebar_scenarios.py     # 复杂场景时序状态机测试
 ```
+

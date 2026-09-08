@@ -1,0 +1,7 @@
+module ClassWidgets.Sidebar
+
+DailyScheduleBar 1.0 DailyScheduleBar.qml
+SidebarHoverButtons 1.0 SidebarHoverButtons.qml
+WeeklySchedulePanel 1.0 WeeklySchedulePanel.qml
+EdgeRestoreCapsule 1.0 EdgeRestoreCapsule.qml
+ScheduleSidebar 1.0 ScheduleSidebar.qml

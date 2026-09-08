@@ -280,6 +280,13 @@ class WidgetsWindow(ReleasableWindow, QObject):
 
         # 侧边课表栏交互区域加入 mask
         schedule_sidebar = self.root_window.findChild(QObject, "scheduleSidebar")
+        if schedule_sidebar:
+            if hasattr(schedule_sidebar, "geometryChanged") and not getattr(schedule_sidebar, "_mask_connected", False):
+                try:
+                    schedule_sidebar.geometryChanged.connect(self.schedule_mask_update)
+                    schedule_sidebar._mask_connected = True
+                except Exception:
+                    pass
         if schedule_sidebar and schedule_sidebar.isVisible():
             if schedule_sidebar.property("isFullWeekExpanded"):
                 # 全周大面板展开时，需要全屏透明遮罩以支持点击外部空白处收回

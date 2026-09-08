@@ -217,7 +217,7 @@ class InteractionsConfig(ConfigBaseModel):
 
 
 class PluginsConfig(ConfigBaseModel):
-    enabled: list[str] = ["builtin.classwidgets.widgets"]
+    enabled: list[str] = ["builtin.classwidgets.widgets", "builtin.classwidgets.sidebar"]
     configs: dict[str, dict[str, JsonData]] = Field(default_factory=dict)
     # Archives are downloaded while the app is running and applied on startup.
     pending_operations: list[dict[str, JsonData]] = Field(default_factory=list)

@@ -358,8 +358,13 @@ FluentPage {
                                 // 启用/禁用
                                 Switch {
                                     text: !checked? qsTr("Disabled") : qsTr("Enabled")
-                                    enabled: modelData._type === "builtin" ? Configs.data.app.debug_mode : true
-                                    onToggled: PluginManager.setPluginEnabled(modelData.id, checked)
+                                    enabled: (modelData._type === "builtin" && modelData.id === "builtin.classwidgets.widgets") ? Configs.data.app.debug_mode : true
+                                    onToggled: {
+                                        PluginManager.setPluginEnabled(modelData.id, checked);
+                                        if (modelData.id === "builtin.classwidgets.sidebar") {
+                                            Configs.set("preferences.schedule_sidebar_enabled", checked);
+                                        }
+                                    }
 
                                     Component.onCompleted: {
                                         checked = PluginManager.isPluginEnabled(modelData.id)

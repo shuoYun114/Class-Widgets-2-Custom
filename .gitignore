@@ -181,8 +181,9 @@ cython_debug/
 .vscode/
 
 # Class Widgets 2
-configs
-plugins
+/configs/
+/plugins/
+!src/plugins/
 
 # RinUI
 RinUI

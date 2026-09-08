@@ -1,0 +1,15 @@
+{
+  "id": "builtin.classwidgets.sidebar",
+  "name": "Schedule Sidebar",
+  "author": "Class Widgets Official",
+  "version": "1.0.0",
+  "api_version": "*",
+  "entry": "sidebar.py",
+  "description": "Desktop edge schedule capsule with full-week matrix panel",
+  "tags": [
+    "schedule",
+    "sidebar",
+    "desktop",
+    "capsule"
+  ]
+}

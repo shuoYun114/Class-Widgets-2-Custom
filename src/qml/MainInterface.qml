@@ -154,9 +154,27 @@ QQW.Window {
         id: trayPanel
     }
 
-    ScheduleSidebar {
-        id: scheduleSidebar
-        objectName: "scheduleSidebar"
+    Loader {
+        id: scheduleSidebarLoader
+        active: (PluginManager ? PluginManager.isPluginEnabled("builtin.classwidgets.sidebar") : true)
+                && (Configs && Configs.data && Configs.data.preferences && Configs.data.preferences.schedule_sidebar_enabled !== false)
+        sourceComponent: ScheduleSidebar {
+            id: scheduleSidebar
+            objectName: "scheduleSidebar"
+        }
+
+        onLoaded: {
+            if (item && item.geometryChanged) {
+                item.geometryChanged.connect(function() {
+                    widgetsLoader.geometryChanged();
+                });
+            }
+            widgetsLoader.geometryChanged();
+        }
+
+        onActiveChanged: {
+            widgetsLoader.geometryChanged();
+        }
     }
 
     Component.onCompleted: {

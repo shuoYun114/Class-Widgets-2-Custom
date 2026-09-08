@@ -66,6 +66,11 @@ class PluginManager(QObject):
         self._plugins: dict[str, CW2Plugin] = {}
         self.metas: list[PluginMeta] = []  # 所有找到的插件 meta
         self.enabled_plugins: set[str] = set(getattr(self.app_central.configs.plugins, "enabled", []))
+        # 兼容性平滑迁移：若全局配置启用了侧边栏，自动确保内置侧边栏插件处于激活状态
+        if getattr(self.app_central.configs.preferences, "schedule_sidebar_enabled", True):
+            if "builtin.classwidgets.sidebar" not in self.enabled_plugins:
+                self.enabled_plugins.add("builtin.classwidgets.sidebar")
+                self.app_central.configs.plugins.enabled = list(self.enabled_plugins)
 
         self.external_path: Path = PLUGINS_PATH
         self.archive_installer = PluginArchiveInstaller(self.external_path)
