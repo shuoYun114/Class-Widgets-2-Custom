@@ -44,24 +44,22 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     SetEnvironmentVariableW(L"QT_PLUGIN_PATH", NULL);
     SetEnvironmentVariableW(L"QT_QPA_PLATFORM_PLUGIN_PATH", NULL);
 
-    // 3. 开启 CPU 软件渲染保底，防止虚拟机/老旧显卡驱动导致 D3D11 崩溃
-    SetEnvironmentVariableW(L"QT_QUICK_BACKEND", L"software");
-    SetEnvironmentVariableW(L"QSG_RHI_BACKEND", L"software");
-    SetEnvironmentVariableW(L"QT_OPENGL", L"software");
+    // 3. 彻底清除导致 QML 文字渲染丢失的旧版软件渲染变量
+    SetEnvironmentVariableW(L"QT_QUICK_BACKEND", NULL);
+    SetEnvironmentVariableW(L"QT_OPENGL", NULL);
 
-    // 4. 将当前目录注入 DLL 搜索链
+    // 4. 启用 Windows 原生 Direct3D 11 标准图形后端（保证文字 DirectWrite 平滑抗锯齿清晰显示）
+    SetEnvironmentVariableW(L"QSG_RHI_BACKEND", L"d3d11");
+
+    // 5. 将当前目录注入 DLL 搜索链
     SetDllDirectoryW(exeDir);
 
     GetEnvironmentVariableW(L"PATH", oldPath, 8192);
     wsprintfW(newPath, L"%s;%s\\PySide6;%s\\PySide6\\plugins;%s\\platforms;%s", exeDir, exeDir, exeDir, exeDir, oldPath);
     SetEnvironmentVariableW(L"PATH", newPath);
 
-    // 5. 查找主程序可执行文件
+    // 6. 查找主程序可执行文件
     wsprintfW(targetExe, L"%s\\Class Widgets 2.exe", exeDir);
-    if (GetFileAttributesW(targetExe) == INVALID_FILE_ATTRIBUTES) {
-        wsprintfW(targetExe, L"%s\\ClassWidgets.exe", exeDir);
-    }
-
     if (GetFileAttributesW(targetExe) == INVALID_FILE_ATTRIBUTES) {
         MessageBoxW(NULL, L"未在当前目录下找到 Class Widgets 2.exe，请确认安装包已完整解压！", L"Class Widgets 2 启动器", MB_ICONERROR);
         return 1;
