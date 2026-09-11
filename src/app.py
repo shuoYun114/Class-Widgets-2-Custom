@@ -37,6 +37,18 @@ _DLL_HANDLES = []
 
 # 在 Windows (Python 3.8+) 下，将 PySide6 及关键目录加入 DLL 搜索路径并设置插件环境变量
 if sys.platform == "win32":
+    # 兼容性防御：Windows 10 1709 (Build 16299) 之前版本（如 Win10 1703 Build 15063）缺少 IDWriteFactory6，
+    # Qt 6.8 默认的 DirectWrite 字体引擎会初始化失败导致文字不显示，此处自动平滑回退至 GDI 字体引擎
+    try:
+        win_ver = sys.getwindowsversion()
+        if win_ver.major < 10 or (win_ver.major == 10 and win_ver.build < 16299):
+            if not any(arg.startswith("-platform") for arg in sys.argv):
+                sys.argv.extend(["-platform", "windows:fontengine=gdi"])
+            if "QT_QPA_PLATFORM" not in os.environ:
+                os.environ["QT_QPA_PLATFORM"] = "windows:fontengine=gdi"
+    except Exception:
+        pass
+
     candidate_dirs = []
     if getattr(sys, "frozen", False):
         base_dir = os.path.dirname(sys.executable)
