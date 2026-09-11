@@ -40,16 +40,16 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         }
     }
 
-    // 2. 清除外部 Qt 环境变量冲突
+    // 2. 清除外部 Qt 插件路径干扰
     SetEnvironmentVariableW(L"QT_PLUGIN_PATH", NULL);
     SetEnvironmentVariableW(L"QT_QPA_PLATFORM_PLUGIN_PATH", NULL);
 
-    // 3. 彻底清除导致 QML 文字渲染丢失的旧版软件渲染变量
+    // 3. 强制启用 FreeType 字体引擎（解决 Win10 1703 缺少 IDWriteFactory6 导致文字消失的致命Bug）
+    SetEnvironmentVariableW(L"QT_QPA_PLATFORM", L"windows:fontengine=freetype");
+
+    // 4. 清除旧版残废的软件光栅变量
     SetEnvironmentVariableW(L"QT_QUICK_BACKEND", NULL);
     SetEnvironmentVariableW(L"QT_OPENGL", NULL);
-
-    // 4. 启用 Windows 原生 Direct3D 11 标准图形后端（保证文字 DirectWrite 平滑抗锯齿清晰显示）
-    SetEnvironmentVariableW(L"QSG_RHI_BACKEND", L"d3d11");
 
     // 5. 将当前目录注入 DLL 搜索链
     SetDllDirectoryW(exeDir);
@@ -65,7 +65,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         return 1;
     }
 
-    wsprintfW(cmdLine, L"\"%s\"", targetExe);
+    // 命令行双重注入 -platform windows:fontengine=freetype
+    wsprintfW(cmdLine, L"\"%s\" -platform windows:fontengine=freetype", targetExe);
 
     ZeroMemory(&si, sizeof(si));
     si.cb = sizeof(si);
