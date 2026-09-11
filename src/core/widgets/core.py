@@ -295,20 +295,24 @@ class WidgetsWindow(ReleasableWindow, QObject):
                 return
 
             sidebar_rects = []
-            rects_prop = schedule_sidebar.property("interactiveRects")
-            if hasattr(rects_prop, "toVariant"):
-                rects_prop = rects_prop.toVariant()
-            if isinstance(rects_prop, (list, tuple)):
-                sidebar_rects = rects_prop
-            elif hasattr(schedule_sidebar, "getInteractiveRects"):
+            # 优先调用 QML 动态计算方法，确保取得实时的交互几何矩形
+            if hasattr(schedule_sidebar, "getInteractiveRects"):
                 try:
                     res = schedule_sidebar.getInteractiveRects()
                     if hasattr(res, "toVariant"):
                         res = res.toVariant()
-                    if isinstance(res, (list, tuple)):
+                    if isinstance(res, (list, tuple)) and len(res) > 0:
                         sidebar_rects = res
                 except Exception:
                     pass
+
+            # 次选读取 interactiveRects 属性
+            if not sidebar_rects:
+                rects_prop = schedule_sidebar.property("interactiveRects")
+                if hasattr(rects_prop, "toVariant"):
+                    rects_prop = rects_prop.toVariant()
+                if isinstance(rects_prop, (list, tuple)):
+                    sidebar_rects = rects_prop
 
             sb_x = 0
             sb_y = 0

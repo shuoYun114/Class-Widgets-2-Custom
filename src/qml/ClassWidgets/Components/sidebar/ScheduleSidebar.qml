@@ -98,6 +98,11 @@ Item {
     Connections {
         target: dailyBar
         function onHeightChanged() { sidebarRoot.geometryChanged(); }
+        function onWidthChanged() { sidebarRoot.geometryChanged(); }
+        function onXChanged() { sidebarRoot.geometryChanged(); }
+        function onYChanged() { sidebarRoot.geometryChanged(); }
+        function onVisibleChanged() { sidebarRoot.geometryChanged(); }
+        function onOpacityChanged() { sidebarRoot.geometryChanged(); }
         function onHasActiveBubbleChanged() { sidebarRoot.geometryChanged(); }
         function onBubbleCardYChanged() { sidebarRoot.geometryChanged(); }
         function onBarHoveredChanged() {
@@ -147,9 +152,13 @@ Item {
 
         // NORMAL 竖条态：精准多矩形按需分配，杜绝占用左右多余空白桌面空间
         var rects = [];
-        if (dailyBar.visible && dailyBar.opacity > 0.05) {
-            // 1. 竖条胶囊主体 (绝对贴边，仅160px宽)
-            rects.push([dailyBar.x, dailyBar.y, dailyBar.width, dailyBar.height]);
+        if (sidebarState === "NORMAL") {
+            // 1. 竖条胶囊主体 (绝对贴边，仅160px宽，避免动画初期的透明度导致遮罩完全丢失)
+            var barW = dailyBar.width > 0 ? dailyBar.width : 160;
+            var barH = dailyBar.height > 0 ? dailyBar.height : 680;
+            var barX = dailyBar.x;
+            var barY = dailyBar.y;
+            rects.push([barX, barY, barW, barH]);
 
             // 2. 悬浮双按钮 (仅在滑出可见时加入遮罩，紧靠竖条，44px宽)
             if (hoverButtons.visible && hoverButtons.opacity > 0.05) {
@@ -158,8 +167,8 @@ Item {
 
             // 3. 课程详情气泡卡片 (仅在用户点击课程弹出详情时加入遮罩，卡片关闭后桌面右键立即穿透)
             if (dailyBar.hasActiveBubble) {
-                var bubbleAbsX = dailyBar.x + dailyBar.bubbleCardX;
-                var bubbleAbsY = dailyBar.y + dailyBar.bubbleCardY;
+                var bubbleAbsX = barX + dailyBar.bubbleCardX;
+                var bubbleAbsY = barY + dailyBar.bubbleCardY;
                 rects.push([bubbleAbsX, bubbleAbsY, dailyBar.bubbleCardW, dailyBar.bubbleCardH]);
             }
         }

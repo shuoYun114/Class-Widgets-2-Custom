@@ -156,6 +156,7 @@ QQW.Window {
 
     Loader {
         id: scheduleSidebarLoader
+        anchors.fill: parent
         active: (PluginManager ? PluginManager.isPluginEnabled("builtin.classwidgets.sidebar") : true)
                 && (Configs && Configs.data && Configs.data.preferences && Configs.data.preferences.schedule_sidebar_enabled !== false)
         sourceComponent: ScheduleSidebar {
