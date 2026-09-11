@@ -344,7 +344,7 @@ Item {
                         anchors.rightMargin: 4
                         height: 1.5
                         radius: 1
-                        width: Math.max(0, (parent.width - 8) * Math.min(1.0, Math.max(0.0, modelData.progress || 0.0)))
+                        width: Math.max(0, (parent.width - 8) * Math.min(1.0, Math.max(0.0, (isCurrent ? (AppCentral.scheduleRuntime ? AppCentral.scheduleRuntime.progress : 0.0) : (modelData.progress || 0.0)))))
                         color: itemColor
 
                         Behavior on width {
@@ -597,7 +597,15 @@ Item {
                     Item { Layout.fillWidth: true }
 
                     Text {
-                        text: Math.round((dailyBarRoot.activeEntry ? (dailyBarRoot.activeEntry.progress || 0) : 0) * 100) + "%"
+                        text: {
+                            var p = 0.0;
+                            if (dailyBarRoot.activeEntry && dailyBarRoot.activeEntry.isCurrent) {
+                                p = (AppCentral.scheduleRuntime ? AppCentral.scheduleRuntime.progress : 0.0);
+                            } else if (dailyBarRoot.activeEntry) {
+                                p = dailyBarRoot.activeEntry.progress || 0.0;
+                            }
+                            return Math.round(Math.min(1.0, Math.max(0.0, p)) * 100) + "%";
+                        }
                         font.pixelSize: 10
                         font.bold: true
                         color: dailyBarRoot.activeEntry ? (dailyBarRoot.activeEntry.color || "#007AFF") : "#007AFF"
@@ -615,7 +623,15 @@ Item {
                         anchors.top: parent.top
                         anchors.bottom: parent.bottom
                         radius: 1.5
-                        width: Math.max(0, parent.width * Math.min(1.0, Math.max(0.0, (dailyBarRoot.activeEntry ? dailyBarRoot.activeEntry.progress : 0) || 0.0)))
+                        width: {
+                            var p = 0.0;
+                            if (dailyBarRoot.activeEntry && dailyBarRoot.activeEntry.isCurrent) {
+                                p = (AppCentral.scheduleRuntime ? AppCentral.scheduleRuntime.progress : 0.0);
+                            } else if (dailyBarRoot.activeEntry) {
+                                p = dailyBarRoot.activeEntry.progress || 0.0;
+                            }
+                            return Math.max(0, parent.width * Math.min(1.0, Math.max(0.0, p)));
+                        }
                         color: dailyBarRoot.activeEntry ? (dailyBarRoot.activeEntry.color || "#007AFF") : "#007AFF"
                     }
                 }

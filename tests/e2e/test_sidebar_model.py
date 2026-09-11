@@ -841,3 +841,29 @@ def test_sidebar_many_entries_full_day_no_overflow_data(mock_central):
     assert len(week_schedule["days"]["1"]) == 10
 
 
+def test_current_lesson_progress_dynamic_update(mock_central, standard_schedule):
+    """
+    回归测试: 验证上课进行中 progress 动态更新机制
+    确保 runtime.progress 随着时间流逝准确计算百分比，
+    供侧边栏 QML 响应式绑定实时渲染进度条与百分比文本。
+    """
+    runtime = ScheduleRuntime(mock_central)
+    
+    # 第1节课: 08:00 - 08:45 (总时长 45 分钟)
+    # 模拟在 08:00 (刚上课): 进度为 0.0
+    setup_runtime(runtime, standard_schedule, datetime(2026, 9, 7, 8, 0, 0))
+    runtime._progress = runtime.get_progress_percent()
+    assert runtime.progress == 0.0
+    
+    # 模拟在 08:22:30 (上课一半): 进度为 0.5 (50%)
+    setup_runtime(runtime, standard_schedule, datetime(2026, 9, 7, 8, 22, 30))
+    runtime._progress = runtime.get_progress_percent()
+    assert runtime.progress == 0.5
+    
+    # 模拟在 08:45 (下课时刻): 进度为 1.0 (100%)
+    setup_runtime(runtime, standard_schedule, datetime(2026, 9, 7, 8, 45, 0))
+    runtime._progress = runtime.get_progress_percent()
+    assert runtime.progress == 1.0
+
+
+
