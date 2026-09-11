@@ -94,15 +94,28 @@ Item {
         sidebarRoot.geometryChanged();
     }
 
-    // 监听子组件尺寸与状态变化 (仅关键物理尺寸与状态变更时通知，避免 hover 中途反复触发 setMask)
+    // 监听子组件尺寸与状态变化，实现遮罩精准动态联动
     Connections {
         target: dailyBar
         function onHeightChanged() { sidebarRoot.geometryChanged(); }
+        function onHasActiveBubbleChanged() { sidebarRoot.geometryChanged(); }
+        function onBubbleCardYChanged() { sidebarRoot.geometryChanged(); }
         function onBarHoveredChanged() {
             if (dailyBar.barHovered) {
                 hoverButtons.requestShow();
             } else if (!hoverButtons.isHovered) {
                 hoverButtons.requestHideWithBuffer();
+            }
+        }
+    }
+
+    // 监听悬浮双按钮状态，滑出或隐藏时更新遮罩
+    Connections {
+        target: hoverButtons
+        function onVisibleChanged() { sidebarRoot.geometryChanged(); }
+        function onOpacityChanged() {
+            if (hoverButtons.opacity > 0.05 || hoverButtons.opacity < 0.01) {
+                sidebarRoot.geometryChanged();
             }
         }
     }
@@ -132,21 +145,22 @@ Item {
             return [[edgeCapsule.x, edgeCapsule.y, edgeCapsule.width, edgeCapsule.height]];
         }
 
-        // NORMAL 竖条态：合并竖条与按钮/详情气泡预留区
-        // 一次性分配好交互区域，避免在鼠标悬停、按钮滑出、气泡淡入期间频繁调用 Win32 SetWindowRgn 造成 DWM 动画掉帧
+        // NORMAL 竖条态：精准多矩形按需分配，杜绝占用左右多余空白桌面空间
         var rects = [];
         if (dailyBar.visible && dailyBar.opacity > 0.05) {
-            var extraSpace = 210; // 覆盖悬浮按钮(44px)与气泡卡片(190px)
-            if (isLeftEdge) {
-                // 靠左贴边：按钮和气泡在竖条右侧
-                var areaX = dailyBar.x;
-                var areaW = dailyBar.width + extraSpace;
-                rects.push([areaX, dailyBar.y, areaW, dailyBar.height]);
-            } else {
-                // 靠右贴边：按钮和气泡在竖条左侧
-                var areaX = Math.max(0, dailyBar.x - extraSpace);
-                var areaW = (dailyBar.x + dailyBar.width) - areaX;
-                rects.push([areaX, dailyBar.y, areaW, dailyBar.height]);
+            // 1. 竖条胶囊主体 (绝对贴边，仅160px宽)
+            rects.push([dailyBar.x, dailyBar.y, dailyBar.width, dailyBar.height]);
+
+            // 2. 悬浮双按钮 (仅在滑出可见时加入遮罩，紧靠竖条，44px宽)
+            if (hoverButtons.visible && hoverButtons.opacity > 0.05) {
+                rects.push([hoverButtons.x, hoverButtons.y, hoverButtons.width, hoverButtons.height]);
+            }
+
+            // 3. 课程详情气泡卡片 (仅在用户点击课程弹出详情时加入遮罩，卡片关闭后桌面右键立即穿透)
+            if (dailyBar.hasActiveBubble) {
+                var bubbleAbsX = dailyBar.x + dailyBar.bubbleCardX;
+                var bubbleAbsY = dailyBar.y + dailyBar.bubbleCardY;
+                rects.push([bubbleAbsX, bubbleAbsY, dailyBar.bubbleCardW, dailyBar.bubbleCardH]);
             }
         }
 

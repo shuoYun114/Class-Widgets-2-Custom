@@ -44,8 +44,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     SetEnvironmentVariableW(L"QT_PLUGIN_PATH", NULL);
     SetEnvironmentVariableW(L"QT_QPA_PLATFORM_PLUGIN_PATH", NULL);
 
-    // 3. 强制启用 FreeType 字体引擎（解决 Win10 1703 缺少 IDWriteFactory6 导致文字消失的致命Bug）
-    SetEnvironmentVariableW(L"QT_QPA_PLATFORM", L"windows:fontengine=freetype");
+    // 3. 强制启用 Windows 经典 GDI 字体引擎（解决 Win10 1703 字体消失且保证原生饱满粗细质感）
+    SetEnvironmentVariableW(L"QT_QPA_PLATFORM", L"windows:fontengine=gdi");
 
     // 4. 清除旧版残废的软件光栅变量
     SetEnvironmentVariableW(L"QT_QUICK_BACKEND", NULL);
@@ -65,8 +65,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         return 1;
     }
 
-    // 命令行双重注入 -platform windows:fontengine=freetype
-    wsprintfW(cmdLine, L"\"%s\" -platform windows:fontengine=freetype", targetExe);
+    // 命令行双重注入 -platform windows:fontengine=gdi
+    wsprintfW(cmdLine, L"\"%s\" -platform windows:fontengine=gdi", targetExe);
 
     ZeroMemory(&si, sizeof(si));
     si.cb = sizeof(si);

@@ -22,7 +22,11 @@ Item {
 
     // 状态与向外暴露属性
     property bool barHovered: barMouseArea.containsMouse || bubbleMouseArea.containsMouse
-    property bool hasActiveBubble: bubbleCard.opacity > 0.05
+    readonly property bool hasActiveBubble: bubbleCard.showBubble && (bubbleCard.opacity > 0.05)
+    readonly property real bubbleCardX: bubbleCard.x
+    readonly property real bubbleCardY: bubbleCard.y
+    readonly property real bubbleCardW: bubbleCard.width
+    readonly property real bubbleCardH: bubbleCard.height
     property var activeEntry: null
 
     // 自定义外观与定位属性 (由父级 ScheduleSidebar 传入)
