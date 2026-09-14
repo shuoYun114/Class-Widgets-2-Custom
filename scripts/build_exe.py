@@ -53,14 +53,18 @@ def run_build(skip_pyinstaller=False):
 
         # 2. 组装 PyInstaller 命令参数
         sep = os.pathsep
+        # 确保基础必要数据目录存在，防御 CI 干净检出环境缺少未被 Git 跟踪的 configs 目录
+        (root_dir / "configs").mkdir(parents=True, exist_ok=True)
+        
         add_data_args = [
             f"--add-data=src/qml{sep}src/qml",
             f"--add-data=src/plugins{sep}src/plugins",
             f"--add-data=src/themes{sep}src/themes",
             f"--add-data=assets{sep}assets",
             f"--add-data=configs{sep}configs",
-            f"--add-data=LICENSE{sep}.",
         ]
+        if (root_dir / "LICENSE").exists():
+            add_data_args.append(f"--add-data=LICENSE{sep}.")
 
         cmd = [
             sys.executable,
