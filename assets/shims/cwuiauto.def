@@ -1,0 +1,8 @@
+LIBRARY "cwuiauto"
+EXPORTS
+    UiaClientsAreListening
+    UiaReturnRawElementProvider
+    UiaHostProviderFromHwnd
+    UiaRaiseAutomationPropertyChangedEvent
+    UiaRaiseAutomationEvent
+    UiaRaiseNotificationEvent

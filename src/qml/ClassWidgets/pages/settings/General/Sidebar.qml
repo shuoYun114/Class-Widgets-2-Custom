@@ -224,36 +224,86 @@ FluentPage {
                 }
             }
         }
+    }
+
+    // ==========================================
+    // 4. 尺寸与文字大小设置 (针对教室大屏优化)
+    // ==========================================
+    ColumnLayout {
+        Layout.fillWidth: true
+        spacing: 4
+        enabled: sidebarMasterSwitch.checked
+
+        Text {
+            typography: Typography.BodyStrong
+            text: qsTr("Size & Font Size") === "Size & Font Size" ? "尺寸与文字大小 (大屏适配)" : qsTr("Size & Font Size")
+        }
+
+        SettingCard {
+            Layout.fillWidth: true
+            icon.name: "ic_fluent_arrow_autofit_width_20_regular"
+            title: qsTr("Sidebar Width") === "Sidebar Width" ? "侧边栏宽度" : qsTr("Sidebar Width")
+            description: qsTr("Adjust the overall width of the schedule sidebar (140px to 380px, default 160px)") === "Adjust the overall width of the schedule sidebar (140px to 380px, default 160px)"
+                ? "调整侧边课表栏整体胶囊宽度（范围 140px ~ 380px，默认 160px）"
+                : qsTr("Adjust the overall width of the schedule sidebar (140px to 380px, default 160px)")
+
+            Timer {
+                id: widthCommitTimer
+                interval: 60
+                repeat: false
+                onTriggered: {
+                    Configs.set("preferences.schedule_sidebar_width", sidebarWidthSlider.value);
+                }
+            }
+
+            Slider {
+                id: sidebarWidthSlider
+                from: 140
+                to: 380
+                stepSize: 10
+                tickmarks: true
+                tickFrequency: 20
+                toolTip.text: Math.round(value) + " px"
+                toolTip.visible: pressed
+                enabled: !Configs.isKeyLocked("preferences.schedule_sidebar_width")
+                onValueChanged: {
+                    if (pressed) {
+                        widthCommitTimer.restart();
+                    }
+                }
+                Component.onCompleted: {
+                    value = (Configs.data.preferences.schedule_sidebar_width !== undefined)
+                        ? Configs.data.preferences.schedule_sidebar_width
+                        : 160
+                }
+            }
+        }
 
         SettingCard {
             Layout.fillWidth: true
             icon.name: "ic_fluent_text_font_size_20_regular"
             title: qsTr("Lesson Font Size") === "Lesson Font Size" ? "课程文字大小" : qsTr("Lesson Font Size")
-            description: qsTr("Adjust font size of lesson titles and schedules on the sidebar (10px to 42px, default 11px). Recommended 18px-32px for classroom large screens.") === "Adjust font size of lesson titles and schedules on the sidebar (10px to 42px, default 11px). Recommended 18px-32px for classroom large screens."
-                ? "调节侧边课表文字大小（范围 10px ~ 42px，默认 11px）。教室大屏或多媒体黑板推荐设置为 18px ~ 32px，方便后排同学清晰看课表"
-                : qsTr("Adjust font size of lesson titles and schedules on the sidebar (10px to 42px, default 11px). Recommended 18px-32px for classroom large screens.")
+            description: qsTr("Adjust font size of lesson titles and time ranges (10px to 32px, clearer on big screens)") === "Adjust font size of lesson titles and time ranges (10px to 32px, clearer on big screens)"
+                ? "调整课表中课程名称与时间的字体字号（范围 10px ~ 32px，教室大屏更清晰）"
+                : qsTr("Adjust font size of lesson titles and time ranges (10px to 32px, clearer on big screens)")
 
             Timer {
                 id: fontSizeCommitTimer
                 interval: 60
                 repeat: false
                 onTriggered: {
-                    Configs.set("preferences.schedule_sidebar_font_size", Math.round(fontSizeSlider.value));
+                    Configs.set("preferences.schedule_sidebar_font_size", fontSizeSlider.value);
                 }
             }
 
             Slider {
                 id: fontSizeSlider
                 from: 10
-                to: 42
+                to: 32
                 stepSize: 1
                 tickmarks: true
                 tickFrequency: 2
-                toolTip.text: {
-                    var v = Math.round(value);
-                    var tag = (v <= 12) ? "标准" : (v <= 16 ? "大字" : (v <= 24 ? "教室大屏" : "后排特大字"));
-                    return v + " px (" + tag + ")";
-                }
+                toolTip.text: Math.round(value) + " px"
                 toolTip.visible: pressed
                 enabled: !Configs.isKeyLocked("preferences.schedule_sidebar_font_size")
                 onValueChanged: {
@@ -264,7 +314,7 @@ FluentPage {
                 Component.onCompleted: {
                     value = (Configs.data.preferences.schedule_sidebar_font_size !== undefined)
                         ? Configs.data.preferences.schedule_sidebar_font_size
-                        : 11
+                        : 12
                 }
             }
         }

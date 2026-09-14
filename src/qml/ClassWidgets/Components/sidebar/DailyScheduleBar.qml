@@ -9,28 +9,25 @@ import ClassWidgets.Easing
 Item {
     id: dailyBarRoot
 
-    // 课程基准字号 (响应式绑定，默认 11px，支持教室大屏模式 10px ~ 32px)
-    property int lessonFontSize: {
-        var size = (Configs && Configs.data && Configs.data.preferences && Configs.data.preferences.schedule_sidebar_font_size !== undefined)
-            ? Configs.data.preferences.schedule_sidebar_font_size
-            : 11;
-        return Math.max(10, Math.min(42, size));
-    }
+    // 侧边栏整体宽度与字体配置 (支持大屏自定义调节)
+    property real customWidth: (Configs && Configs.data && Configs.data.preferences && Configs.data.preferences.schedule_sidebar_width)
+        ? Configs.data.preferences.schedule_sidebar_width
+        : 160
+    width: customWidth
 
-    // 随字号动态协调宽度 (11px时165px，大屏大字号时平滑延展，保证文字不被截断)
-    width: Math.max(165, Math.round(165 + (lessonFontSize - 11) * 7.5))
+    property int customFontSize: (Configs && Configs.data && Configs.data.preferences && Configs.data.preferences.schedule_sidebar_font_size)
+        ? Configs.data.preferences.schedule_sidebar_font_size
+        : 12
 
-    // 单项课程卡片高度 (随字号自适应呼吸延展，大屏大字模式下舒展不拥挤)
-    readonly property real itemHeight: Math.max(44, Math.round(44 + (lessonFontSize - 11) * 2.8))
-
+    readonly property real itemHeight: Math.max(42, Math.round(customFontSize * 2.6 + 8))
     property var scheduleList: (AppCentral.scheduleRuntime && AppCentral.scheduleRuntime.sidebarDaySchedule)
         ? AppCentral.scheduleRuntime.sidebarDaySchedule
         : []
     readonly property int courseCount: scheduleList ? scheduleList.length : 0
     readonly property real listTotalHeight: Math.max(1, courseCount) * itemHeight + Math.max(0, courseCount - 1) * 4
-    readonly property real headerTotalHeight: Math.max(72, Math.round(72 + (lessonFontSize - 11) * 1.5))
+    readonly property real headerTotalHeight: 72 // 顶部栏(32)+分割线(1)+外边距(24)+间距(15)
     readonly property real idealTotalHeight: courseCount === 0 ? 180 : (headerTotalHeight + listTotalHeight)
-    height: Math.min(parent ? parent.height * 0.90 : 800, Math.max(200, idealTotalHeight))
+    height: Math.min(parent ? parent.height * 0.85 : 680, Math.max(200, idealTotalHeight))
 
     // 状态与向外暴露属性
     property bool barHovered: barMouseArea.containsMouse || bubbleMouseArea.containsMouse
@@ -281,17 +278,16 @@ Item {
                             return Qt.alpha(itemColor, 0.38);
                         }
                         if (itemHoverArea.containsMouse) {
-                            return Theme.isDark() ? Qt.alpha("#FFFFFF", 0.15) : Qt.alpha("#000000", 0.12);
+                            return Theme.isDark() ? Qt.alpha("#FFFFFF", 0.16) : Qt.alpha("#000000", 0.12);
                         }
                         return Theme.isDark() ? Qt.alpha("#FFFFFF", 0.06) : Qt.alpha("#000000", 0.04);
                     }
 
                     Behavior on color {
-                        ColorAnimation { duration: 120 }
+                        ColorAnimation { duration: 160 }
                     }
-
                     Behavior on border.color {
-                        ColorAnimation { duration: 120 }
+                        ColorAnimation { duration: 160 }
                     }
 
                     // 左侧色彩轻标记微条
@@ -299,20 +295,20 @@ Item {
                         anchors.left: parent.left
                         anchors.leftMargin: 3.5
                         anchors.verticalCenter: parent.verticalCenter
-                        width: Math.max(2.5, Math.round(dailyBarRoot.lessonFontSize * 0.22))
-                        height: Math.max(18, Math.round(dailyBarRoot.itemHeight * 0.44))
-                        radius: width / 2
+                        width: 2.5
+                        height: Math.min(parent.height - 10, Math.max(18, Math.round(dailyBarRoot.customFontSize * 1.6)))
+                        radius: 1.25
                         color: itemColor
                     }
 
                     // 文本内容
                     ColumnLayout {
                         anchors.fill: parent
-                        anchors.leftMargin: Math.max(11, Math.round(11 + (dailyBarRoot.lessonFontSize - 11) * 0.4))
+                        anchors.leftMargin: 11
                         anchors.rightMargin: 6
-                        anchors.topMargin: Math.max(3, Math.round(dailyBarRoot.itemHeight * 0.08))
-                        anchors.bottomMargin: Math.max(3, Math.round(dailyBarRoot.itemHeight * 0.08))
-                        spacing: Math.max(1, Math.round((dailyBarRoot.lessonFontSize - 11) * 0.25))
+                        anchors.topMargin: 4
+                        anchors.bottomMargin: 4
+                        spacing: 1
 
                         RowLayout {
                             Layout.fillWidth: true
@@ -321,9 +317,9 @@ Item {
                             Text {
                                 Layout.fillWidth: true
                                 text: modelData.subjectName || modelData.title || "课程"
-                                font.pixelSize: Math.max(13, Math.round(dailyBarRoot.lessonFontSize * 1.2))
+                                font.pixelSize: dailyBarRoot.customFontSize
                                 font.weight: Font.DemiBold
-                                font.bold: isCurrent || (dailyBarRoot.lessonFontSize >= 14)
+                                font.bold: isCurrent
                                 elide: Text.ElideRight
                                 color: isCurrent
                                     ? (Theme.isDark() ? "#FFFFFF" : itemColor)
@@ -333,7 +329,7 @@ Item {
                             // 正在进行课程极简微光小点
                             Rectangle {
                                 visible: isCurrent
-                                width: Math.max(4, Math.round(dailyBarRoot.lessonFontSize * 0.36))
+                                width: Math.max(4, Math.round(dailyBarRoot.customFontSize * 0.35))
                                 height: width
                                 radius: width / 2
                                 color: itemColor
@@ -342,7 +338,7 @@ Item {
 
                         Text {
                             text: modelData.timeRange || (modelData.startTime + " - " + modelData.endTime)
-                            font.pixelSize: Math.max(9, Math.round(dailyBarRoot.lessonFontSize * 0.85))
+                            font.pixelSize: Math.max(9, Math.round(dailyBarRoot.customFontSize * 0.85))
                             color: isCurrent
                                 ? (Theme.isDark() ? "#C4C4C8" : "#48484A")
                                 : (Theme.isDark() ? "#8E8E93" : "#6E6E73")
@@ -391,7 +387,7 @@ Item {
         property real targetY: 20
         property bool showBubble: false
 
-        width: Math.max(196, Math.round(196 + (dailyBarRoot.lessonFontSize - 11) * 8))
+        width: 196
         height: bubbleInnerLayout.implicitHeight + 24
         x: dailyBarRoot.isLeftEdge ? (dailyBarRoot.width + 10) : (-width - 10)
         y: targetY
@@ -509,7 +505,7 @@ Item {
                 Text {
                     Layout.fillWidth: true
                     text: dailyBarRoot.activeEntry ? (dailyBarRoot.activeEntry.subjectName || dailyBarRoot.activeEntry.title || "课程详情") : ""
-                    font.pixelSize: Math.max(12, dailyBarRoot.lessonFontSize + 1)
+                    font.pixelSize: 12
                     font.bold: true
                     elide: Text.ElideRight
                     color: Theme.isDark() ? "#FFFFFF" : "#1D1D1F"
@@ -518,16 +514,16 @@ Item {
                 // 正在进行中小徽标
                 Rectangle {
                     visible: dailyBarRoot.activeEntry ? (dailyBarRoot.activeEntry.isCurrent || false) : false
-                    height: Math.max(16, Math.round(dailyBarRoot.lessonFontSize * 1.3))
+                    height: 16
                     width: statusTagText.implicitWidth + 10
-                    radius: height / 2
+                    radius: 8
                     color: Qt.alpha(dailyBarRoot.activeEntry ? (dailyBarRoot.activeEntry.color || "#007AFF") : "#007AFF", 0.22)
 
                     Text {
                         id: statusTagText
                         anchors.centerIn: parent
                         text: "进行中"
-                        font.pixelSize: Math.max(9, Math.round(dailyBarRoot.lessonFontSize * 0.8))
+                        font.pixelSize: 9
                         font.bold: true
                         color: dailyBarRoot.activeEntry ? (dailyBarRoot.activeEntry.color || "#007AFF") : "#007AFF"
                     }
@@ -541,14 +537,14 @@ Item {
 
                 Text {
                     text: "时间"
-                    font.pixelSize: Math.max(10, Math.round(dailyBarRoot.lessonFontSize * 0.85))
+                    font.pixelSize: 10
                     color: Theme.isDark() ? "#707078" : "#8E8E93"
                 }
 
                 Text {
                     Layout.fillWidth: true
                     text: dailyBarRoot.activeEntry ? (dailyBarRoot.activeEntry.timeRange || "") : ""
-                    font.pixelSize: Math.max(11, dailyBarRoot.lessonFontSize)
+                    font.pixelSize: 11
                     color: Theme.isDark() ? "#D0D0D4" : "#3A3A3C"
                 }
             }
@@ -560,14 +556,14 @@ Item {
 
                 Text {
                     text: "教室"
-                    font.pixelSize: Math.max(10, Math.round(dailyBarRoot.lessonFontSize * 0.85))
+                    font.pixelSize: 10
                     color: Theme.isDark() ? "#707078" : "#8E8E93"
                 }
 
                 Text {
                     Layout.fillWidth: true
                     text: (dailyBarRoot.activeEntry && dailyBarRoot.activeEntry.location) ? dailyBarRoot.activeEntry.location : "未指定"
-                    font.pixelSize: Math.max(11, dailyBarRoot.lessonFontSize)
+                    font.pixelSize: 11
                     elide: Text.ElideRight
                     color: Theme.isDark() ? "#D0D0D4" : "#3A3A3C"
                 }
@@ -580,14 +576,14 @@ Item {
 
                 Text {
                     text: "教师"
-                    font.pixelSize: Math.max(10, Math.round(dailyBarRoot.lessonFontSize * 0.85))
+                    font.pixelSize: 10
                     color: Theme.isDark() ? "#707078" : "#8E8E93"
                 }
 
                 Text {
                     Layout.fillWidth: true
                     text: (dailyBarRoot.activeEntry && dailyBarRoot.activeEntry.teacher) ? dailyBarRoot.activeEntry.teacher : "未指定"
-                    font.pixelSize: Math.max(11, dailyBarRoot.lessonFontSize)
+                    font.pixelSize: 11
                     elide: Text.ElideRight
                     color: Theme.isDark() ? "#D0D0D4" : "#3A3A3C"
                 }
@@ -604,7 +600,7 @@ Item {
 
                     Text {
                         text: "已进行"
-                        font.pixelSize: Math.max(10, Math.round(dailyBarRoot.lessonFontSize * 0.85))
+                        font.pixelSize: 10
                         color: Theme.isDark() ? "#707078" : "#8E8E93"
                     }
 
@@ -620,7 +616,7 @@ Item {
                             }
                             return Math.round(Math.min(1.0, Math.max(0.0, p)) * 100) + "%";
                         }
-                        font.pixelSize: Math.max(10, Math.round(dailyBarRoot.lessonFontSize * 0.85))
+                        font.pixelSize: 10
                         font.bold: true
                         color: dailyBarRoot.activeEntry ? (dailyBarRoot.activeEntry.color || "#007AFF") : "#007AFF"
                     }

@@ -199,4 +199,5 @@ RinUI
 .agents/
 
 # Archive files
-*.zip
+*.zip
+golden_baseline/

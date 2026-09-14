@@ -24,6 +24,12 @@ Item {
     property real cornerRadius: 22
     property real bgOpacity: 1.0
 
+    readonly property int customFontSize: (Configs && Configs.data && Configs.data.preferences && Configs.data.preferences.schedule_sidebar_font_size)
+        ? Configs.data.preferences.schedule_sidebar_font_size
+        : 11
+    readonly property int weeklyTitleFontSize: Math.max(10, Math.min(16, Math.round(customFontSize * 0.95)))
+    readonly property int weeklySubFontSize: Math.max(8, Math.min(13, Math.round(customFontSize * 0.75)))
+
     signal requestClose()
 
     // 进出平滑动画 (根据贴边方向镜像 Translate 矩阵位移与淡入)
@@ -351,7 +357,7 @@ Item {
 
                             delegate: Rectangle {
                                 width: dayEntriesList.width
-                                height: 38
+                                height: Math.max(38, Math.round(weeklyPanelRoot.weeklyTitleFontSize * 2.2 + 8))
                                 radius: 7
 
                                 readonly property bool isCurrent: modelData.isCurrent || false
@@ -405,38 +411,28 @@ Item {
                                     anchors.bottomMargin: 2
                                     spacing: 1
 
-                                     Text {
-                                         Layout.fillWidth: true
-                                         text: modelData.subjectName || modelData.title || ""
-                                         font.pixelSize: {
-                                             var baseSize = (typeof Configs !== "undefined" && Configs.data && Configs.data.preferences && Configs.data.preferences.schedule_sidebar_font_size !== undefined)
-                                                 ? Configs.data.preferences.schedule_sidebar_font_size
-                                                 : 11;
-                                             return Math.max(12, Math.min(24, Math.round(baseSize * 1.18)));
-                                         }
-                                         font.weight: Font.DemiBold
-                                         font.bold: isCurrent || ((typeof Configs !== "undefined" && Configs.data && Configs.data.preferences && Configs.data.preferences.schedule_sidebar_font_size >= 14) || false)
-                                         elide: Text.ElideRight
-                                         color: isCurrent
-                                             ? (Theme.isDark() ? "#FFFFFF" : itemColor)
-                                             : (Theme.isDark() ? "#EDEDED" : "#1D1D1F")
-                                     }
+                                    Text {
+                                        Layout.fillWidth: true
+                                        text: modelData.subjectName || modelData.title || ""
+                                        font.pixelSize: weeklyPanelRoot.weeklyTitleFontSize
+                                        font.weight: Font.DemiBold
+                                        font.bold: isCurrent
+                                        elide: Text.ElideRight
+                                        color: isCurrent
+                                            ? (Theme.isDark() ? "#FFFFFF" : itemColor)
+                                            : (Theme.isDark() ? "#EDEDED" : "#1D1D1F")
+                                    }
 
-                                     Text {
-                                         Layout.fillWidth: true
-                                         text: modelData.timeRange + ((modelData.location && modelData.location !== "") ? (" · " + modelData.location) : "")
-                                         font.pixelSize: {
-                                             var baseSize = (typeof Configs !== "undefined" && Configs.data && Configs.data.preferences && Configs.data.preferences.schedule_sidebar_font_size !== undefined)
-                                                 ? Configs.data.preferences.schedule_sidebar_font_size
-                                                 : 11;
-                                             return Math.max(8, Math.min(16, Math.round(baseSize * 0.82)));
-                                         }
-                                         elide: Text.ElideRight
-                                         color: isCurrent
-                                             ? (Theme.isDark() ? "#C4C4C8" : "#48484A")
-                                             : (Theme.isDark() ? "#8E8E93" : "#6E6E73")
-                                     }
-                                 }
+                                    Text {
+                                        Layout.fillWidth: true
+                                        text: modelData.timeRange + ((modelData.location && modelData.location !== "") ? (" · " + modelData.location) : "")
+                                        font.pixelSize: weeklyPanelRoot.weeklySubFontSize
+                                        elide: Text.ElideRight
+                                        color: isCurrent
+                                            ? (Theme.isDark() ? "#C4C4C8" : "#48484A")
+                                            : (Theme.isDark() ? "#8E8E93" : "#6E6E73")
+                                    }
+                                }
                             }
                         }
                     }
