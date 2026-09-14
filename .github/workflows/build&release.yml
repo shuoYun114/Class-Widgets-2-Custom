@@ -218,6 +218,27 @@ jobs:
             echo "PySide6 directory not found at $TARGET, skipping cleanup"
           fi
 
+      - name: 🛡️ Inject Windows 10 1703 compatibility shims & launcher (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $dist = "dist/Class Widgets 2"
+          $shimDll = "assets/shims/api-ms-win-shcore-scaling-l1-1-1.dll"
+          $launcher = "assets/shims/ClassWidgets.exe"
+          if (Test-Path $shimDll) {
+              New-Item -ItemType Directory -Path "$dist/platforms" -Force | Out-Null
+              New-Item -ItemType Directory -Path "$dist/PySide6/plugins/platforms" -Force | Out-Null
+              Copy-Item $shimDll "$dist/api-ms-win-shcore-scaling-l1-1-1.dll" -Force
+              Copy-Item $shimDll "$dist/platforms/api-ms-win-shcore-scaling-l1-1-1.dll" -Force
+              Copy-Item $shimDll "$dist/PySide6/api-ms-win-shcore-scaling-l1-1-1.dll" -Force
+              Copy-Item $shimDll "$dist/PySide6/plugins/platforms/api-ms-win-shcore-scaling-l1-1-1.dll" -Force
+              Write-Host "Successfully injected shcore-scaling shim."
+          }
+          if (Test-Path $launcher) {
+              Copy-Item $launcher "$dist/ClassWidgets.exe" -Force
+              Write-Host "Successfully injected ClassWidgets.exe launcher."
+          }
+
       - name: 📦 Zip build (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
@@ -229,8 +250,8 @@ jobs:
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Path "./exe-for-signing" -Force | Out-Null
-          $exe = Get-ChildItem -Path "dist/Class Widgets 2" -Filter "*.exe" | Select-Object -First 1
-          if ($null -eq $exe) { Write-Error "未找到待签名的可执行文件"; exit 1 }
+          $exe = Get-Item -Path "dist/Class Widgets 2/Class Widgets 2.exe"
+          if ($null -eq $exe -or -not (Test-Path $exe.FullName)) { Write-Error "未找到待签名的主可执行文件"; exit 1 }
           Copy-Item $exe.FullName -Destination "./exe-for-signing/$($exe.Name)" -Force
           echo "EXE_NAME=$($exe.Name)" >> $env:GITHUB_ENV
 

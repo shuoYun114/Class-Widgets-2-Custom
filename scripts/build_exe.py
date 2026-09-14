@@ -118,7 +118,7 @@ def run_build(skip_pyinstaller=False):
         "@echo off\r\n"
         "chcp 65001 >nul\r\n"
         "echo 正在为 Class Widgets 2 创建桌面快捷方式...\r\n"
-        "powershell -NoProfile -Command \"$ws = New-Object -ComObject WScript.Shell; $s = $ws.CreateShortcut([System.IO.Path]::Combine([Environment]::GetFolderPath('Desktop'), 'Class Widgets 2.lnk')); $s.TargetPath = [System.IO.Path]::Combine($PSScriptRoot, 'Class Widgets 2.exe'); $s.WorkingDirectory = $PSScriptRoot; $s.Save()\"\r\n"
+        "powershell -NoProfile -Command \"$target = if (Test-Path ([System.IO.Path]::Combine($PSScriptRoot, 'ClassWidgets.exe'))) { [System.IO.Path]::Combine($PSScriptRoot, 'ClassWidgets.exe') } else { [System.IO.Path]::Combine($PSScriptRoot, 'Class Widgets 2.exe') }; $ws = New-Object -ComObject WScript.Shell; $s = $ws.CreateShortcut([System.IO.Path]::Combine([Environment]::GetFolderPath('Desktop'), 'Class Widgets 2.lnk')); $s.TargetPath = $target; $s.WorkingDirectory = $PSScriptRoot; $s.Save()\"\r\n"
         "echo [成功] 桌面快捷方式已成功创建到您的桌面！\r\n"
         "ping 127.0.0.1 -n 2 >nul\r\n"
     )
@@ -172,13 +172,41 @@ def run_build(skip_pyinstaller=False):
                     shutil.copy2(c_src, c_dst)
             print("[OK] 成功向 platforms 注入前置运行时依赖")
 
+    # 3.5.2 针对 Windows 10 1703 (Build 15063) 及更早版本的兼容性加固
+    # 注入纯静态 api-ms-win-shcore-scaling-l1-1-1.dll 转发垫片与 ClassWidgets 原生启动器
+    shims_dir = root_dir / "assets" / "shims"
+    shim_dll = shims_dir / "api-ms-win-shcore-scaling-l1-1-1.dll"
+    launcher_exe = shims_dir / "ClassWidgets.exe"
+
+    if shim_dll.exists():
+        shim_destinations = [
+            dist_dir / "api-ms-win-shcore-scaling-l1-1-1.dll",
+            dist_dir / "platforms" / "api-ms-win-shcore-scaling-l1-1-1.dll",
+            dist_dir / "PySide6" / "api-ms-win-shcore-scaling-l1-1-1.dll",
+            dist_dir / "PySide6" / "plugins" / "platforms" / "api-ms-win-shcore-scaling-l1-1-1.dll",
+        ]
+        for dest in shim_destinations:
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(shim_dll, dest)
+        print("[OK] 成功在各关键路径部署 api-ms-win-shcore-scaling-l1-1-1.dll 兼容垫片")
+    else:
+        print("[警告] 未找到 assets/shims/api-ms-win-shcore-scaling-l1-1-1.dll，Win10 1703 可能无法正常初始化平台插件！")
+
+    if launcher_exe.exists():
+        shutil.copy2(launcher_exe, dist_dir / "ClassWidgets.exe")
+        print("[OK] 成功部署 ClassWidgets.exe 原生安全启动器")
+
     # 3.6 生成便携安全启动器与诊断启动器（应对双击无响应或极端系统限制）
     launcher_bat = dist_dir / "启动 Class Widgets.bat"
     launcher_content = (
         "@echo off\r\n"
         "cd /d \"%~dp0\"\r\n"
         "set \"PATH=%~dp0;%~dp0PySide6;%PATH%\"\r\n"
-        "start \"\" \"Class Widgets 2.exe\"\r\n"
+        "if exist \"%~dp0ClassWidgets.exe\" (\r\n"
+        "    start \"\" \"%~dp0ClassWidgets.exe\"\r\n"
+        ") else (\r\n"
+        "    start \"\" \"%~dp0Class Widgets 2.exe\"\r\n"
+        ")\r\n"
     )
     with open(launcher_bat, "w", encoding="gbk", errors="ignore") as f:
         f.write(launcher_content)
@@ -192,7 +220,7 @@ def run_build(skip_pyinstaller=False):
         "echo 正在以诊断模式启动 Class Widgets 2...\r\n"
         "echo 如果出现任何启动异常或缺少插件，控制台将显示详细追踪日志\r\n"
         "echo ========================================================\r\n"
-        "set \"PATH=%~dp0;%~dp0PySide6;%PATH%\"\r\n"
+        "set \"PATH=%~dp0;%~dp0PySide6;%~dp0platforms;%PATH%\"\r\n"
         "set QT_DEBUG_PLUGINS=1\r\n"
         "\"Class Widgets 2.exe\"\r\n"
         "if %errorlevel% neq 0 (\r\n"
