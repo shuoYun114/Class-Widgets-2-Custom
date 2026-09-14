@@ -46,6 +46,16 @@ jobs:
           $upstreamSha = (git rev-parse upstream/main).Trim()
           Write-Host "上游最新 Commit SHA: $upstreamSha"
 
+          # 提取官方最新版本Tag（如 2.0.0.dev20260913）
+          $upstreamTag = (git tag --points-at $upstreamSha | Select-Object -First 1)
+          if (-not $upstreamTag) {
+            $upstreamTag = (git tag -l "2.0.0.dev*" --sort=-creatordate | Select-Object -First 1)
+          }
+          if (-not $upstreamTag) {
+            $upstreamTag = "2.0.0.dev$($upstreamSha.Substring(0, 8))"
+          }
+          Write-Host "上游最新版本Tag: $upstreamTag"
+
           # 读取上次同步基线
           $versionFile = ".upstream_version"
           $lastSha = ""
@@ -62,6 +72,7 @@ jobs:
             Write-Host "检测到官方新更新或强制触发构建，准备合并与打包！"
             echo "should_build=true" >> $env:GITHUB_OUTPUT
             echo "upstream_sha=$upstreamSha" >> $env:GITHUB_OUTPUT
+            echo "upstream_tag=$upstreamTag" >> $env:GITHUB_OUTPUT
           } else {
             Write-Host "官方仓库尚无新提交，无需重复打包构建。"
             echo "should_build=false" >> $env:GITHUB_OUTPUT
@@ -101,19 +112,26 @@ jobs:
             }
           }
           
-          # 更新基线版本记录文件
+          # 更新基线版本记录文件与源码版本号
+          $upstreamTag = "${{ steps.check_upstream.outputs.upstream_tag }}"
           $nowIso = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
           $record = @{
             upstream_repo = "RinLit-233-shiroko/Class-Widgets-2"
+            last_synced_version = $upstreamTag
             last_synced_commit = $upstreamSha
             last_synced_at = $nowIso
           } | ConvertTo-Json -Depth 4
           Set-Content -Path ".upstream_version" -Value $record -Encoding UTF8
+
+          if ($upstreamTag) {
+            (Get-Content "src/__init__.py") -replace '__version__\s*=\s*".*?"', "__version__ = `"$upstreamTag`"" | Set-Content "src/__init__.py"
+            git add src/__init__.py
+          }
           
           git add .upstream_version
           $diff = git diff --staged
           if ($diff) {
-            git commit -m "chore(version): 记录最新上游同步基线 [$upstreamSha]"
+            git commit -m "chore(version): 追随官方最新版本基线 [$upstreamTag / $upstreamSha]"
           }
 
       - name: 📦 配置 Python 与 uv 环境
@@ -160,25 +178,28 @@ jobs:
         if: steps.check_upstream.outputs.should_build == 'true'
         uses: softprops/action-gh-release@v2
         with:
-          name: "Class Widgets 2 (侧边课表定制版) - 官方同步更新"
-          tag_name: "release-${{ steps.check_upstream.outputs.upstream_sha }}"
+          name: "Class Widgets ${{ steps.check_upstream.outputs.upstream_tag }} (侧边课表与大屏定制版)"
+          tag_name: "v${{ steps.check_upstream.outputs.upstream_tag }}"
           draft: false
-          prerelease: false
+          prerelease: true
           make_latest: true
           generate_release_notes: true
           body: |
-            ## 🎉 自动追踪官方最新版本构建完成
+            ## 🎉 官方最新版本同步构建完成 (版本号：${{ steps.check_upstream.outputs.upstream_tag }})
             
-            本版本已自动同步官方仓库 [RinLit-233-shiroko/Class-Widgets-2](https://github.com/RinLit-233-shiroko/Class-Widgets-2) 的最新代码。
+            本版本已全量追随并合并官方仓库 [RinLit-233-shiroko/Class-Widgets-2](https://github.com/RinLit-233-shiroko/Class-Widgets-2) 的 **${{ steps.check_upstream.outputs.upstream_tag }}** 最新代码。
             
-            ### ✨ 二改特性全量内嵌：
-            - **极简胶囊当天课表竖条**：屏幕右侧边缘半透明悬浮，随时间线自动高亮当前课程与动态进度。
-            - **悬浮双按钮交互**：移入自动弹出展开/收回双按钮，带 300ms 防误触缓冲。
-            - **全周网格矩阵大面板**：向左平滑展开整周所有配置课程，支持点击屏幕空白处快速收回。
-            - **贴边微型呼出胶囊**：收起后屏幕边缘常驻极简向左箭头胶囊（`‹`），点击秒级复原。
-            - **系统级 100% 桌面穿透**：无操作阻挡，多层遮罩动态收敛。
-            - **满帧 GPU 级丝滑动画**：纯硬件 Translate 平移矩阵偏移与轻量化阴影渲染。
-            - **全量自动化测试把关**：全部通过回归验证。
+            ### ✨ 官方最新更新（包含）：
+            - **课程表编辑器重构**：排课 UI 重构、支持多选指定周设置。
+            - **课表转换拆分与健壮性提升**：支持多个指定周配置解析。
+            - **活动排版修复**：滚动字幕在不可见子项下的宽度排版自适应修复。
+            
+            ### 🔥 独家定制增强功能：
+            - **教室大屏课表文字调节 (10px ~ 32px)**：在设置中支持随意调节课表文字大小，自适应宽度延展与高度呼吸放大，大屏字号（>=16px）自动加粗，坐在教室后排也能清晰看清课表！
+            - **极简胶囊当天课表竖条**：屏幕边缘常驻半透明悬浮，随时间线自动高亮当前课程与动态进度。
+            - **全周网格矩阵大面板**：整周所有课程全景一览，字号与大屏设置实时联动。
+            - **系统级 100% 桌面穿透**：无任何点击阻挡，支持在空白处随意右键唤出系统菜单。
+            - **满帧 GPU 级丝滑动画**：纯硬件 Translate 变换。
             
             ### 📥 下载与使用：
             下载下方的 **`ClassWidgets-2-Windows.zip`**，解压后双击 **`Class Widgets 2.exe`** 即可使用。

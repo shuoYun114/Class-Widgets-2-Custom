@@ -280,3 +280,54 @@ def test_sidebar_custom_config_read_write_persistence(config_env):
     assert reloaded.preferences.schedule_sidebar_corner_radius == 18.0
     assert reloaded.preferences.schedule_sidebar_opacity == 0.85
 
+
+def test_sidebar_config_font_size_default(config_env):
+    """Tier 1: 验证侧边栏课程文字字号默认值符合契约：11px"""
+    manager, _ = config_env
+    manager.load_config()
+
+    assert manager.preferences.schedule_sidebar_font_size == 11
+    assert manager.data["preferences"]["schedule_sidebar_font_size"] == 11
+
+
+def test_sidebar_config_font_size_read_write_persistence(config_env):
+    """Tier 1: 验证教室大屏模式字号调节（例如 24px）正确落盘与持久化恢复"""
+    manager, config_file = config_env
+
+    # 模拟设置界面将字号调整为 24px (教室大屏模式)
+    manager.set("preferences.schedule_sidebar_font_size", 24)
+    manager.save()
+
+    assert manager.preferences.schedule_sidebar_font_size == 24
+    assert manager.data["preferences"]["schedule_sidebar_font_size"] == 24
+
+    # 重新加载验证持久化
+    reloaded = ConfigManager(config_file.parent, config_file.name)
+    reloaded.load_config()
+
+    assert reloaded.preferences.schedule_sidebar_font_size == 24
+    assert reloaded.data["preferences"]["schedule_sidebar_font_size"] == 24
+
+
+def test_sidebar_config_font_size_upgrade_compatibility(tmp_path, qapp):
+    """Tier 2: 验证旧版配置文件升级时缺少 schedule_sidebar_font_size 会自动回退默认值 11"""
+    config_dir = tmp_path / "legacy_config"
+    config_dir.mkdir(parents=True, exist_ok=True)
+    config_file = config_dir / "config.json"
+
+    # 构造缺失字号字段的旧版配置
+    legacy_data = {
+        "preferences": {
+            "schedule_sidebar_enabled": True,
+            "schedule_sidebar_collapsed": False,
+        }
+    }
+    with open(config_file, "w", encoding="utf-8") as f:
+        json.dump(legacy_data, f)
+
+    manager = ConfigManager(config_dir, "config.json")
+    manager.load_config()
+
+    assert manager.preferences.schedule_sidebar_font_size == 11
+    assert manager.data["preferences"]["schedule_sidebar_font_size"] == 11
+

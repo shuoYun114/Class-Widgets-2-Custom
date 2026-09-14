@@ -195,6 +195,7 @@ class PreferencesConfig(ConfigBaseModel):
     schedule_sidebar_custom_appearance: bool = False  # 是否启用侧边栏专属外观 (默认 False 跟随主程序全局外观)
     schedule_sidebar_corner_radius: float = 22.0  # 侧边栏专属圆角半径 (像素)
     schedule_sidebar_opacity: float = 1.0  # 侧边栏专属背景不透明度 (0.0 ~ 1.0)
+    schedule_sidebar_font_size: int = 11  # 侧边栏课程文字字号 (范围 10 ~ 32 像素，默认 11，适配教室大屏远距大字模式)
 
     class Config:
         use_enum_values = True

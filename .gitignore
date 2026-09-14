@@ -12,6 +12,7 @@ build/
 develop-eggs/
 dist/
 release_station/
+release_standalone_bin/
 downloads/
 eggs/
 .eggs/
