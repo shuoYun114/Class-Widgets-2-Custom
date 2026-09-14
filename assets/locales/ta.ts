@@ -421,7 +421,7 @@ Do you want to continue using them, or discard and restore the original schedule
 <context>
     <name>Configs</name>
     <message>
-        <location filename="../../src/core/config/model.py" line="230"/>
+        <location filename="../../src/core/config/model.py" line="239"/>
         <source>New Schedule 1</source>
         <translation>புதிய அட்டவணை 1</translation>
     </message>
@@ -1990,27 +1990,27 @@ Do you want to continue using them, or discard and restore the original schedule
         <translation>பிழைத்திருத்த அறிவிப்பு</translation>
     </message>
     <message>
-        <location filename="../../src/core/schedule/runtime.py" line="73"/>
+        <location filename="../../src/core/schedule/runtime.py" line="83"/>
         <source>Class Notifications</source>
         <translation>வகுப்பு அறிவிப்புகள்</translation>
     </message>
     <message>
-        <location filename="../../src/core/schedule/runtime.py" line="82"/>
+        <location filename="../../src/core/schedule/runtime.py" line="92"/>
         <source>Activity Notifications</source>
         <translation>செயல்பாட்டு அறிவிப்புகள்</translation>
     </message>
     <message>
-        <location filename="../../src/core/schedule/runtime.py" line="91"/>
+        <location filename="../../src/core/schedule/runtime.py" line="101"/>
         <source>Break Notifications</source>
         <translation>அறிவிப்புகளை உடைக்கவும்</translation>
     </message>
     <message>
-        <location filename="../../src/core/schedule/runtime.py" line="100"/>
+        <location filename="../../src/core/schedule/runtime.py" line="110"/>
         <source>Free Time Notifications</source>
         <translation>இலவச நேர அறிவிப்புகள்</translation>
     </message>
     <message>
-        <location filename="../../src/core/schedule/runtime.py" line="109"/>
+        <location filename="../../src/core/schedule/runtime.py" line="119"/>
         <source>Preparation Bell</source>
         <translation>தயாரிப்பு மணி</translation>
     </message>
@@ -2470,12 +2470,12 @@ If translations are missing after a theme change, please restart</source>
 <context>
     <name>PluginManager</name>
     <message>
-        <location filename="../../src/core/plugin/manager.py" line="120"/>
+        <location filename="../../src/core/plugin/manager.py" line="125"/>
         <source>Incompatible</source>
         <translation>பொருந்தாதது</translation>
     </message>
     <message>
-        <location filename="../../src/core/plugin/manager.py" line="124"/>
+        <location filename="../../src/core/plugin/manager.py" line="129"/>
         <source>{count} incompatible plugin(s) have been loaded, which may cause unknown issues.</source>
         <translation>{count} பொருந்தாத செருகுநிரல்கள் (கள்) ஏற்றப்பட்டுள்ளன, இது அறியப்படாத சிக்கல்களை ஏற்படுத்தக்கூடும்.</translation>
     </message>
@@ -2932,42 +2932,42 @@ It&apos;s incompatible and may cause unexpected issues.</source>
         <translation>உள்ளமைக்கப்பட்ட</translation>
     </message>
     <message>
-        <location filename="../../src/qml/ClassWidgets/pages/settings/Plugins.qml" line="381"/>
+        <location filename="../../src/qml/ClassWidgets/pages/settings/Plugins.qml" line="386"/>
         <source>Update</source>
         <translation type="unfinished">புதுப்பிப்பு</translation>
     </message>
     <message>
-        <location filename="../../src/qml/ClassWidgets/pages/settings/Plugins.qml" line="392"/>
+        <location filename="../../src/qml/ClassWidgets/pages/settings/Plugins.qml" line="397"/>
         <source>Open In</source>
         <translation>உள்ளே திற</translation>
     </message>
     <message>
-        <location filename="../../src/qml/ClassWidgets/pages/settings/Plugins.qml" line="395"/>
+        <location filename="../../src/qml/ClassWidgets/pages/settings/Plugins.qml" line="400"/>
         <source>Finder</source>
         <translation>கண்டுபிடிப்பாளர்</translation>
     </message>
     <message>
-        <location filename="../../src/qml/ClassWidgets/pages/settings/Plugins.qml" line="395"/>
+        <location filename="../../src/qml/ClassWidgets/pages/settings/Plugins.qml" line="400"/>
         <source>File Explorer</source>
         <translation>கோப்பு எக்ச்ப்ளோரர்</translation>
     </message>
     <message>
-        <location filename="../../src/qml/ClassWidgets/pages/settings/Plugins.qml" line="400"/>
+        <location filename="../../src/qml/ClassWidgets/pages/settings/Plugins.qml" line="405"/>
         <source>Open Failed</source>
         <translation>திறக்க முடியவில்லை</translation>
     </message>
     <message>
-        <location filename="../../src/qml/ClassWidgets/pages/settings/Plugins.qml" line="401"/>
+        <location filename="../../src/qml/ClassWidgets/pages/settings/Plugins.qml" line="406"/>
         <source>Failed to open the plugin folder.</source>
         <translation>செருகுநிரல் கோப்புறையைத் திறக்க முடியவில்லை.</translation>
     </message>
     <message>
-        <location filename="../../src/qml/ClassWidgets/pages/settings/Plugins.qml" line="410"/>
+        <location filename="../../src/qml/ClassWidgets/pages/settings/Plugins.qml" line="415"/>
         <source>External Online Repository</source>
         <translation>வெளிப்புற நிகழ்நிலை களஞ்சியம்</translation>
     </message>
     <message>
-        <location filename="../../src/qml/ClassWidgets/pages/settings/Plugins.qml" line="418"/>
+        <location filename="../../src/qml/ClassWidgets/pages/settings/Plugins.qml" line="423"/>
         <source>Uninstall</source>
         <translation>நிறுவல் நீக்கவும்</translation>
     </message>
@@ -3075,6 +3075,22 @@ It&apos;s incompatible and may cause unexpected issues.</source>
     <message>
         <location filename="../../src/qml/ClassWidgets/pages/tutorial/Plugins.qml" line="521"/>
         <source>%1 installed, %2 failed. Retry the failed plugins or continue without them.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../src/plugins/cw_sidebar/sidebar.py" line="19"/>
+        <location filename="../../src/plugins/cw_sidebar/sidebar.py" line="54"/>
+        <source>Schedule Sidebar</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../src/plugins/cw_sidebar/sidebar.py" line="26"/>
+        <source>Desktop edge schedule capsule with full-week matrix panel</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../src/plugins/cw_sidebar/sidebar.py" line="75"/>
+        <source>Toggle Sidebar</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -3518,83 +3534,79 @@ It&apos;s incompatible and may cause unexpected issues.</source>
 <context>
     <name>ScheduleRuntime</name>
     <message>
-        <location filename="../../src/core/schedule/runtime.py" line="310"/>
+        <location filename="../../src/core/schedule/runtime.py" line="527"/>
         <source>Class Started</source>
         <translation>வகுப்பு துவங்கியது</translation>
     </message>
     <message>
-        <location filename="../../src/core/schedule/runtime.py" line="327"/>
+        <location filename="../../src/core/schedule/runtime.py" line="544"/>
         <source>Activity Started</source>
         <translation>செயல்பாடு தொடங்கியது</translation>
     </message>
     <message>
-        <location filename="../../src/core/schedule/runtime.py" line="336"/>
+        <location filename="../../src/core/schedule/runtime.py" line="553"/>
         <source>Intermission</source>
         <translation>இடைவேளை</translation>
     </message>
     <message>
-        <location filename="../../src/core/schedule/runtime.py" line="352"/>
-        <location filename="../../src/core/schedule/runtime.py" line="362"/>
-        <location filename="../../src/core/schedule/runtime.py" line="388"/>
-        <location filename="../../src/core/schedule/runtime.py" line="398"/>
+        <location filename="../../src/core/schedule/runtime.py" line="506"/>
+        <location filename="../../src/core/schedule/runtime.py" line="514"/>
         <source>Next: {}</source>
         <translation>அடுத்து: {}</translation>
     </message>
     <message>
-        <location filename="../../src/core/schedule/runtime.py" line="356"/>
-        <location filename="../../src/core/schedule/runtime.py" line="392"/>
+        <location filename="../../src/core/schedule/runtime.py" line="509"/>
         <source>Next: {} at {}</source>
         <translation>அடுத்து: {} மணிக்கு {}</translation>
     </message>
     <message>
-        <location filename="../../src/core/schedule/runtime.py" line="358"/>
-        <location filename="../../src/core/schedule/runtime.py" line="394"/>
+        <location filename="../../src/core/schedule/runtime.py" line="510"/>
         <source>Next: {} (Off-site)</source>
         <translation>அடுத்து: {} (ஆஃப்-சைட்)</translation>
     </message>
     <message>
-        <location filename="../../src/core/schedule/runtime.py" line="372"/>
+        <location filename="../../src/core/schedule/runtime.py" line="557"/>
         <source>Recess</source>
         <translation>இடைவேளை</translation>
     </message>
     <message>
-        <location filename="../../src/core/schedule/runtime.py" line="407"/>
+        <location filename="../../src/core/schedule/runtime.py" line="559"/>
         <source>Enjoy your break</source>
         <translation>உங்கள் இடைவேளையை அனுபவிக்கவும்</translation>
     </message>
     <message>
-        <location filename="../../src/core/schedule/runtime.py" line="409"/>
+        <location filename="../../src/core/schedule/runtime.py" line="561"/>
         <source>Free Time</source>
         <translation>இலவச நேரம்</translation>
     </message>
     <message>
-        <location filename="../../src/core/schedule/runtime.py" line="414"/>
+        <location filename="../../src/core/schedule/runtime.py" line="566"/>
         <source>Status Changed</source>
         <translation>நிலை மாற்றப்பட்டது</translation>
     </message>
     <message>
-        <location filename="../../src/core/schedule/runtime.py" line="414"/>
+        <location filename="../../src/core/schedule/runtime.py" line="566"/>
         <source>Current status: {}</source>
         <translation>தற்போதைய நிலை: {}</translation>
     </message>
     <message>
-        <location filename="../../src/core/schedule/runtime.py" line="468"/>
-        <location filename="../../src/core/schedule/runtime.py" line="478"/>
+        <location filename="../../src/core/schedule/runtime.py" line="620"/>
+        <location filename="../../src/core/schedule/runtime.py" line="630"/>
         <source>Coming up: {}</source>
         <translation>வரவிருக்கிறது: {}</translation>
     </message>
     <message>
-        <location filename="../../src/core/schedule/runtime.py" line="472"/>
+        <location filename="../../src/core/schedule/runtime.py" line="624"/>
         <source>Coming up: {} at {}</source>
         <translation>வரவிருக்கிறது: {} மணிக்கு {}</translation>
     </message>
     <message>
-        <location filename="../../src/core/schedule/runtime.py" line="474"/>
+        <location filename="../../src/core/schedule/runtime.py" line="626"/>
         <source>Coming up: {} (Off-site)</source>
         <translation>வரவிருக்கிறது: {} (ஆஃப்-சைட்)</translation>
     </message>
     <message>
-        <location filename="../../src/core/schedule/runtime.py" line="486"/>
+        <location filename="../../src/core/schedule/runtime.py" line="638"/>
         <source>Preparation Bell</source>
         <translation>தயாரிப்பு மணி</translation>
     </message>
@@ -3725,41 +3737,46 @@ It&apos;s incompatible and may cause unexpected issues.</source>
     </message>
     <message>
         <location filename="../../src/qml/ClassWidgets/Windows/Settings.qml" line="51"/>
+        <source>Schedule Sidebar</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../src/qml/ClassWidgets/Windows/Settings.qml" line="56"/>
         <source>Interactions</source>
         <translation>தொடர்புகள்</translation>
     </message>
     <message>
-        <location filename="../../src/qml/ClassWidgets/Windows/Settings.qml" line="56"/>
+        <location filename="../../src/qml/ClassWidgets/Windows/Settings.qml" line="61"/>
         <source>Personalization</source>
         <translation>தனிப்பயனாக்கம்</translation>
     </message>
     <message>
-        <location filename="../../src/qml/ClassWidgets/Windows/Settings.qml" line="61"/>
+        <location filename="../../src/qml/ClassWidgets/Windows/Settings.qml" line="66"/>
         <source>Notification &amp; Time</source>
         <translation>அறிவிப்பு &amp; நேரம்</translation>
     </message>
     <message>
-        <location filename="../../src/qml/ClassWidgets/Windows/Settings.qml" line="65"/>
+        <location filename="../../src/qml/ClassWidgets/Windows/Settings.qml" line="70"/>
         <source>Notification</source>
         <translation>அறிவிப்பு</translation>
     </message>
     <message>
-        <location filename="../../src/qml/ClassWidgets/Windows/Settings.qml" line="70"/>
+        <location filename="../../src/qml/ClassWidgets/Windows/Settings.qml" line="75"/>
         <source>Time</source>
         <translation>நேரம்</translation>
     </message>
     <message>
-        <location filename="../../src/qml/ClassWidgets/Windows/Settings.qml" line="77"/>
+        <location filename="../../src/qml/ClassWidgets/Windows/Settings.qml" line="82"/>
         <source>Plugins</source>
         <translation>செருகுநிரல்கள்</translation>
     </message>
     <message>
-        <location filename="../../src/qml/ClassWidgets/Windows/Settings.qml" line="84"/>
+        <location filename="../../src/qml/ClassWidgets/Windows/Settings.qml" line="89"/>
         <source>About</source>
         <translation>பற்றி</translation>
     </message>
     <message>
-        <location filename="../../src/qml/ClassWidgets/Windows/Settings.qml" line="90"/>
+        <location filename="../../src/qml/ClassWidgets/Windows/Settings.qml" line="95"/>
         <source>Update</source>
         <translation>புதுப்பிப்பு</translation>
     </message>
@@ -3790,6 +3807,216 @@ It&apos;s incompatible and may cause unexpected issues.</source>
         <location filename="../../src/core/central.py" line="170"/>
         <source>Class Swap</source>
         <translation type="unfinished">வகுப்பு இடமாற்று</translation>
+    </message>
+</context>
+<context>
+    <name>Sidebar</name>
+    <message>
+        <location filename="../../src/qml/ClassWidgets/pages/settings/General/Sidebar.qml" line="9"/>
+        <source>Schedule Sidebar</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../src/qml/ClassWidgets/pages/settings/General/Sidebar.qml" line="17"/>
+        <source>Enable Schedule Sidebar</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../src/qml/ClassWidgets/pages/settings/General/Sidebar.qml" line="18"/>
+        <location filename="../../src/qml/ClassWidgets/pages/settings/General/Sidebar.qml" line="20"/>
+        <source>Display daily schedule capsule on the screen edge with quick actions and weekly matrix view</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../src/qml/ClassWidgets/pages/settings/General/Sidebar.qml" line="44"/>
+        <source>Position &amp; Edge</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../src/qml/ClassWidgets/pages/settings/General/Sidebar.qml" line="50"/>
+        <source>Screen Edge</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../src/qml/ClassWidgets/pages/settings/General/Sidebar.qml" line="51"/>
+        <location filename="../../src/qml/ClassWidgets/pages/settings/General/Sidebar.qml" line="53"/>
+        <source>Choose whether the sidebar docks to the right or left edge of the screen</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../src/qml/ClassWidgets/pages/settings/General/Sidebar.qml" line="59"/>
+        <source>Right Edge</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../src/qml/ClassWidgets/pages/settings/General/Sidebar.qml" line="60"/>
+        <source>Left Edge</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../src/qml/ClassWidgets/pages/settings/General/Sidebar.qml" line="78"/>
+        <source>Vertical Offset (Y-Axis)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../src/qml/ClassWidgets/pages/settings/General/Sidebar.qml" line="79"/>
+        <location filename="../../src/qml/ClassWidgets/pages/settings/General/Sidebar.qml" line="81"/>
+        <source>Adjust vertical center position of the schedule sidebar (-500px to +500px)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../src/qml/ClassWidgets/pages/settings/General/Sidebar.qml" line="123"/>
+        <source>Appearances &amp; Theme</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../src/qml/ClassWidgets/pages/settings/General/Sidebar.qml" line="129"/>
+        <source>Custom Appearance</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../src/qml/ClassWidgets/pages/settings/General/Sidebar.qml" line="130"/>
+        <location filename="../../src/qml/ClassWidgets/pages/settings/General/Sidebar.qml" line="132"/>
+        <source>When disabled, the sidebar inherits global widget opacity and corner radius. When enabled, custom values are used.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../src/qml/ClassWidgets/pages/settings/General/Sidebar.qml" line="150"/>
+        <source>Sidebar Corner Radius</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../src/qml/ClassWidgets/pages/settings/General/Sidebar.qml" line="151"/>
+        <location filename="../../src/qml/ClassWidgets/pages/settings/General/Sidebar.qml" line="153"/>
+        <source>Set the corner radius of the schedule sidebar (0px to 50px)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../src/qml/ClassWidgets/pages/settings/General/Sidebar.qml" line="191"/>
+        <source>Sidebar Background Opacity</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../src/qml/ClassWidgets/pages/settings/General/Sidebar.qml" line="192"/>
+        <location filename="../../src/qml/ClassWidgets/pages/settings/General/Sidebar.qml" line="194"/>
+        <source>Change the background opacity of the schedule sidebar (10% to 100%)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../src/qml/ClassWidgets/pages/settings/General/Sidebar.qml" line="231"/>
+        <source>Lesson Font Size</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../src/qml/ClassWidgets/pages/settings/General/Sidebar.qml" line="232"/>
+        <location filename="../../src/qml/ClassWidgets/pages/settings/General/Sidebar.qml" line="234"/>
+        <source>Adjust font size of lesson titles and schedules on the sidebar (10px to 42px, default 11px). Recommended 18px-32px for classroom large screens.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>SidebarSettings</name>
+    <message>
+        <location filename="../../src/plugins/cw_sidebar/pages/SidebarSettings.qml" line="10"/>
+        <source>Schedule Sidebar</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../src/plugins/cw_sidebar/pages/SidebarSettings.qml" line="18"/>
+        <source>Enable Schedule Sidebar</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../src/plugins/cw_sidebar/pages/SidebarSettings.qml" line="19"/>
+        <location filename="../../src/plugins/cw_sidebar/pages/SidebarSettings.qml" line="21"/>
+        <source>Display daily schedule capsule on the screen edge with quick actions and weekly matrix view</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../src/plugins/cw_sidebar/pages/SidebarSettings.qml" line="45"/>
+        <source>Position &amp; Edge</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../src/plugins/cw_sidebar/pages/SidebarSettings.qml" line="51"/>
+        <source>Screen Edge</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../src/plugins/cw_sidebar/pages/SidebarSettings.qml" line="52"/>
+        <location filename="../../src/plugins/cw_sidebar/pages/SidebarSettings.qml" line="54"/>
+        <source>Choose whether the sidebar docks to the right or left edge of the screen</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../src/plugins/cw_sidebar/pages/SidebarSettings.qml" line="60"/>
+        <source>Right Edge</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../src/plugins/cw_sidebar/pages/SidebarSettings.qml" line="61"/>
+        <source>Left Edge</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../src/plugins/cw_sidebar/pages/SidebarSettings.qml" line="79"/>
+        <source>Vertical Offset (Y-Axis)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../src/plugins/cw_sidebar/pages/SidebarSettings.qml" line="80"/>
+        <location filename="../../src/plugins/cw_sidebar/pages/SidebarSettings.qml" line="82"/>
+        <source>Adjust vertical center position of the schedule sidebar (-500px to +500px)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../src/plugins/cw_sidebar/pages/SidebarSettings.qml" line="124"/>
+        <source>Appearances &amp; Theme</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../src/plugins/cw_sidebar/pages/SidebarSettings.qml" line="130"/>
+        <source>Custom Appearance</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../src/plugins/cw_sidebar/pages/SidebarSettings.qml" line="131"/>
+        <location filename="../../src/plugins/cw_sidebar/pages/SidebarSettings.qml" line="133"/>
+        <source>When disabled, the sidebar inherits global widget opacity and corner radius. When enabled, custom values are used.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../src/plugins/cw_sidebar/pages/SidebarSettings.qml" line="151"/>
+        <source>Sidebar Corner Radius</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../src/plugins/cw_sidebar/pages/SidebarSettings.qml" line="152"/>
+        <location filename="../../src/plugins/cw_sidebar/pages/SidebarSettings.qml" line="154"/>
+        <source>Set the corner radius of the schedule sidebar (0px to 50px)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../src/plugins/cw_sidebar/pages/SidebarSettings.qml" line="192"/>
+        <source>Sidebar Background Opacity</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../src/plugins/cw_sidebar/pages/SidebarSettings.qml" line="193"/>
+        <location filename="../../src/plugins/cw_sidebar/pages/SidebarSettings.qml" line="195"/>
+        <source>Change the background opacity of the schedule sidebar (10% to 100%)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../src/plugins/cw_sidebar/pages/SidebarSettings.qml" line="232"/>
+        <source>Lesson Font Size</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../src/plugins/cw_sidebar/pages/SidebarSettings.qml" line="233"/>
+        <location filename="../../src/plugins/cw_sidebar/pages/SidebarSettings.qml" line="235"/>
+        <source>Adjust font size of lesson titles and schedules on the sidebar (10px to 42px, default 11px). Recommended 18px-32px for classroom large screens.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -5296,6 +5523,82 @@ then tap &quot;Edit Widget Screen&quot; in the menu to experience it.</source>
     <message>
         <location filename="../../src/qml/ClassWidgets/pages/settings/General/Widgets.qml" line="275"/>
         <source>Display and position</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../src/qml/ClassWidgets/pages/settings/General/Widgets.qml" line="429"/>
+        <source>Schedule Sidebar</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../src/qml/ClassWidgets/pages/settings/General/Widgets.qml" line="436"/>
+        <source>Enable Schedule Sidebar</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../src/qml/ClassWidgets/pages/settings/General/Widgets.qml" line="437"/>
+        <location filename="../../src/qml/ClassWidgets/pages/settings/General/Widgets.qml" line="439"/>
+        <source>Display daily schedule capsule on the screen edge with quick actions and weekly matrix view</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../src/qml/ClassWidgets/pages/settings/General/Widgets.qml" line="455"/>
+        <source>Screen Edge</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../src/qml/ClassWidgets/pages/settings/General/Widgets.qml" line="456"/>
+        <source>Choose whether the sidebar is attached to the right or left edge of the screen</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../src/qml/ClassWidgets/pages/settings/General/Widgets.qml" line="462"/>
+        <source>Right Edge (Default)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../src/qml/ClassWidgets/pages/settings/General/Widgets.qml" line="463"/>
+        <source>Left Edge</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../src/qml/ClassWidgets/pages/settings/General/Widgets.qml" line="476"/>
+        <source>Vertical Offset</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../src/qml/ClassWidgets/pages/settings/General/Widgets.qml" line="477"/>
+        <source>Fine-tune vertical position relative to screen center (-500 ~ 500 px)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../src/qml/ClassWidgets/pages/settings/General/Widgets.qml" line="498"/>
+        <source>Independent Appearance</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../src/qml/ClassWidgets/pages/settings/General/Widgets.qml" line="499"/>
+        <source>Customize corner radius and opacity independently from global widget settings</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../src/qml/ClassWidgets/pages/settings/General/Widgets.qml" line="516"/>
+        <source>Sidebar Corner Radius</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../src/qml/ClassWidgets/pages/settings/General/Widgets.qml" line="517"/>
+        <source>Set how rounded the schedule sidebar capsule and panels appear</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../src/qml/ClassWidgets/pages/settings/General/Widgets.qml" line="543"/>
+        <source>Sidebar Opacity</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../src/qml/ClassWidgets/pages/settings/General/Widgets.qml" line="544"/>
+        <source>Change the background opacity of the schedule sidebar</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
