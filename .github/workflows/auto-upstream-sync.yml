@@ -74,8 +74,32 @@ jobs:
           $upstreamSha = "${{ steps.check_upstream.outputs.upstream_sha }}"
           Write-Host "正在合并上游官方更新 ($upstreamSha) ..."
           
-          # 执行平滑合并
+          # 执行平滑合并，增加二进制与语言包冲突智能消解防御
           git merge upstream/main -m "chore(upstream): 自动追随并合并官方最新代码 [$upstreamSha]"
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "检测到合并冲突，进入智能冲突消解与二进制修复流程..."
+            $conflicts = git diff --name-only --diff-filter=U
+            Write-Host "未合并文件列表: $($conflicts -join ', ')"
+            
+            # 对于 .qm 等编译产物二进制文件，直接采纳上游版本或由后续 lrelease 重新生成
+            foreach ($file in $conflicts) {
+              if ($file -match '\.qm$') {
+                Write-Host "自动解决二进制产物冲突: $file (采用 upstream)"
+                git checkout --theirs $file
+                git add $file
+              }
+            }
+            
+            # 检查是否还有其他未解决冲突
+            $remaining = git diff --name-only --diff-filter=U
+            if ($remaining) {
+              Write-Error "存在无法自动解决的源码文本冲突，请手动干预: $($remaining -join ', ')"
+              git merge --abort
+              exit 1
+            } else {
+              git commit -m "chore(upstream): 自动合并官方最新代码 (自动消解二进制产物冲突) [$upstreamSha]"
+            }
+          }
           
           # 更新基线版本记录文件
           $nowIso = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
@@ -103,9 +127,16 @@ jobs:
         shell: pwsh
         run: |
           uv sync
-          uv pip install pyinstaller
+          uv pip install pyinstaller pytest
+          Write-Host "正在编译最新的多语言 .qm 产物..."
+          uv run python -c "import glob, subprocess; [subprocess.run(['pyside6-lrelease', ts, '-qm', ts[:-3] + '.qm']) for ts in glob.glob('assets/locales/*.ts')]"
+          git add assets/locales/*.qm
+          $diff = git diff --staged
+          if ($diff) {
+            git commit -m "chore(i18n): 自动重编译所有多语言 .qm 产物"
+          }
 
-      - name: 🧪 运行自动化测试门禁 (Run 157 E2E Tests)
+      - name: 🧪 运行自动化测试门禁 (Run 141 E2E Tests)
         if: steps.check_upstream.outputs.should_build == 'true'
         shell: pwsh
         run: |
@@ -133,6 +164,7 @@ jobs:
           tag_name: "release-${{ steps.check_upstream.outputs.upstream_sha }}"
           draft: false
           prerelease: false
+          make_latest: true
           generate_release_notes: true
           body: |
             ## 🎉 自动追踪官方最新版本构建完成
@@ -140,13 +172,13 @@ jobs:
             本版本已自动同步官方仓库 [RinLit-233-shiroko/Class-Widgets-2](https://github.com/RinLit-233-shiroko/Class-Widgets-2) 的最新代码。
             
             ### ✨ 二改特性全量内嵌：
-            - **极简胶囊当天课表竖条**：屏幕右侧边缘半透明悬浮，随时间线自动高亮当前课程。
+            - **极简胶囊当天课表竖条**：屏幕右侧边缘半透明悬浮，随时间线自动高亮当前课程与动态进度。
             - **悬浮双按钮交互**：移入自动弹出展开/收回双按钮，带 300ms 防误触缓冲。
             - **全周网格矩阵大面板**：向左平滑展开整周所有配置课程，支持点击屏幕空白处快速收回。
             - **贴边微型呼出胶囊**：收起后屏幕边缘常驻极简向左箭头胶囊（`‹`），点击秒级复原。
             - **系统级 100% 桌面穿透**：无操作阻挡，多层遮罩动态收敛。
             - **满帧 GPU 级丝滑动画**：纯硬件 Translate 平移矩阵偏移与轻量化阴影渲染。
-            - **157 项自动化测试把关**：全量通过回归验证。
+            - **全量自动化测试把关**：全部通过回归验证。
             
             ### 📥 下载与使用：
             下载下方的 **`ClassWidgets-2-Windows.zip`**，解压后双击 **`Class Widgets 2.exe`** 即可使用。

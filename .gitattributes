@@ -1,0 +1,9 @@
+# 二进制翻译产物，禁止三方文本合并
+assets/locales/*.qm binary -diff merge=binary
+
+# 纯文本与配置文件标准规范
+*.py text eol=lf
+*.qml text eol=lf
+*.json text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
