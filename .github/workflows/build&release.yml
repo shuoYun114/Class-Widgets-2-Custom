@@ -379,11 +379,13 @@ jobs:
         uses: softprops/action-gh-release@v2
         # 推送/手动+发布 ==> 发布
         if: ${{  github.event_name == 'push' || github.event.inputs.release == 'true' }}
+        continue-on-error: true
         with:
           name: Class Widgets ${{ steps.version.outputs.version_tag }}
           tag_name: ${{ steps.version.outputs.version_tag }}
           body_path: CHANGELOG.md
           prerelease: ${{ steps.version.outputs.prerelease }}
+          overwrite_files: true
           files: |
             dist/ClassWidgets-2-Windows.zip
             dist/ClassWidgets-2-macOS-X64.dmg
@@ -392,11 +394,13 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}     
 
       - name: 📤 Upload CHANGELOG & packages to 123Pan
-        # 推送/手动+上传 ==> 上传
-        if: success() && 
+        # 仅在配置了对应网盘凭据时执行，避免二改仓库报红
+        if: success() && env.HAS_PAN == 'true' && 
           ( github.event_name == 'push' ||
            github.event.inputs.upload2webdav == '123Pan' ||
            github.event.inputs.upload2webdav == 'Both')
+        env:
+          HAS_PAN: ${{ secrets.PAN_USER != '' && secrets.PAN_PASS != '' }}
         run: |
           VERSION="${{ steps.version.outputs.version_tag }}"
           ENCODED_VERSION=$(echo "$VERSION" | sed 's/ /%20/g')
@@ -422,7 +426,9 @@ jobs:
             "https://webdav.123pan.cn/webdav/${ENCODED_VERSION}/ClassWidgets-2-macOS-ARM64.dmg"
 
       - name: 🔔 Trigger Official Website Update
-        if: success()
+        if: success() && env.HAS_ORG_TOKEN == 'true'
+        env:
+          HAS_ORG_TOKEN: ${{ secrets.ORG_DISPATCH_TOKEN != '' }}
         run: |
           curl -L \
             -X POST \
@@ -433,10 +439,12 @@ jobs:
             -d '{"event_type": "update-version"}'
 
       - name: 📤 Upload CHANGELOG & packages to OneDrive
-        if: success() &&
+        if: success() && env.HAS_ONEDRIVE == 'true' &&
           (github.event_name == 'push' ||
           github.event.inputs.upload2webdav == 'OneDrive' ||
           github.event.inputs.upload2webdav == 'Both')
+        env:
+          HAS_ONEDRIVE: ${{ secrets.ONEDRIVE_USER != '' && secrets.ONEDRIVE_PASS != '' }}
         run: |
           VERSION="${{ steps.version.outputs.version_tag }}"
           ENCODED_VERSION=$(echo "$VERSION" | sed 's/ /%20/g')

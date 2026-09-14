@@ -41,9 +41,9 @@ jobs:
       - name: Check Repository
         shell: bash
         run: |
-          if [ "${{ github.repository }}" != "RinLit-233-shiroko/Class-Widgets-2" ]; then
-            echo "[DEBUG] 工作流不在目标仓库，跳过执行"
-            exit 1
+          if [ "${{ github.repository }}" != "RinLit-233-shiroko/Class-Widgets-2" ] && [ "${{ github.repository }}" != "shuoYun114/Class-Widgets-2-Custom" ]; then
+            echo "[DEBUG] 工作流不在目标仓库，优雅跳过执行"
+            exit 0
           fi
 
       - name: Checkout
