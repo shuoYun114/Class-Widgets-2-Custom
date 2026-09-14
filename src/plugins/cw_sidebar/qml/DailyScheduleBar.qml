@@ -10,18 +10,18 @@ Item {
     id: dailyBarRoot
 
     // 课程基准字号 (响应式绑定，默认 11px，支持教室大屏模式 10px ~ 32px)
-    readonly property int lessonFontSize: {
-        if (typeof Configs !== "undefined" && Configs.data && Configs.data.preferences && Configs.data.preferences.schedule_sidebar_font_size !== undefined) {
-            return Configs.data.preferences.schedule_sidebar_font_size;
-        }
-        return 11;
+    property int lessonFontSize: {
+        var size = (Configs && Configs.data && Configs.data.preferences && Configs.data.preferences.schedule_sidebar_font_size !== undefined)
+            ? Configs.data.preferences.schedule_sidebar_font_size
+            : 11;
+        return Math.max(10, Math.min(42, size));
     }
 
-    // 随字号动态协调宽度 (11px时160px，字号增大时自然呼吸加宽，保证大屏教室文字不被截断)
-    width: Math.max(160, Math.round(160 + (lessonFontSize - 11) * 7))
+    // 随字号动态协调宽度 (11px时165px，大屏大字号时平滑延展，保证文字不被截断)
+    width: Math.max(165, Math.round(165 + (lessonFontSize - 11) * 7.5))
 
-    // 单项课程卡片高度 (随字号按需自适应呼吸延展，11px时42px，大屏模式下充足舒展)
-    readonly property real itemHeight: Math.max(42, Math.round(42 + (lessonFontSize - 11) * 2.6))
+    // 单项课程卡片高度 (随字号自适应呼吸延展，大屏大字模式下舒展不拥挤)
+    readonly property real itemHeight: Math.max(44, Math.round(44 + (lessonFontSize - 11) * 2.8))
 
     property var scheduleList: (AppCentral.scheduleRuntime && AppCentral.scheduleRuntime.sidebarDaySchedule)
         ? AppCentral.scheduleRuntime.sidebarDaySchedule
@@ -321,8 +321,9 @@ Item {
                             Text {
                                 Layout.fillWidth: true
                                 text: modelData.subjectName || modelData.title || "课程"
-                                font.pixelSize: dailyBarRoot.lessonFontSize
-                                font.bold: isCurrent || (dailyBarRoot.lessonFontSize >= 16)
+                                font.pixelSize: Math.max(13, Math.round(dailyBarRoot.lessonFontSize * 1.2))
+                                font.weight: Font.DemiBold
+                                font.bold: isCurrent || (dailyBarRoot.lessonFontSize >= 14)
                                 elide: Text.ElideRight
                                 color: isCurrent
                                     ? (Theme.isDark() ? "#FFFFFF" : itemColor)

@@ -229,9 +229,9 @@ FluentPage {
             Layout.fillWidth: true
             icon.name: "ic_fluent_text_font_size_20_regular"
             title: qsTr("Lesson Font Size") === "Lesson Font Size" ? "课程文字大小" : qsTr("Lesson Font Size")
-            description: qsTr("Adjust font size of lesson titles and schedules on the sidebar (10px to 32px, default 11px). Recommended 18px-26px for classroom large screens.") === "Adjust font size of lesson titles and schedules on the sidebar (10px to 32px, default 11px). Recommended 18px-26px for classroom large screens."
-                ? "调节侧边课表文字大小（范围 10px ~ 32px，默认 11px）。教室大屏或多媒体黑板推荐设置为 18px ~ 26px，方便后排同学清晰看课表"
-                : qsTr("Adjust font size of lesson titles and schedules on the sidebar (10px to 32px, default 11px). Recommended 18px-26px for classroom large screens.")
+            description: qsTr("Adjust font size of lesson titles and schedules on the sidebar (10px to 42px, default 11px). Recommended 18px-32px for classroom large screens.") === "Adjust font size of lesson titles and schedules on the sidebar (10px to 42px, default 11px). Recommended 18px-32px for classroom large screens."
+                ? "调节侧边课表文字大小（范围 10px ~ 42px，默认 11px）。教室大屏或多媒体黑板推荐设置为 18px ~ 32px，方便后排同学清晰看课表"
+                : qsTr("Adjust font size of lesson titles and schedules on the sidebar (10px to 42px, default 11px). Recommended 18px-32px for classroom large screens.")
 
             Timer {
                 id: fontSizeCommitTimer
@@ -245,13 +245,13 @@ FluentPage {
             Slider {
                 id: fontSizeSlider
                 from: 10
-                to: 32
+                to: 42
                 stepSize: 1
                 tickmarks: true
                 tickFrequency: 2
                 toolTip.text: {
                     var v = Math.round(value);
-                    var tag = (v <= 12) ? "标准" : (v <= 16 ? "大字" : (v <= 22 ? "教室大屏" : "后排超大字"));
+                    var tag = (v <= 12) ? "标准" : (v <= 16 ? "大字" : (v <= 24 ? "教室大屏" : "后排特大字"));
                     return v + " px (" + tag + ")";
                 }
                 toolTip.visible: pressed

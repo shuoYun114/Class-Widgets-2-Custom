@@ -412,9 +412,10 @@ Item {
                                              var baseSize = (typeof Configs !== "undefined" && Configs.data && Configs.data.preferences && Configs.data.preferences.schedule_sidebar_font_size !== undefined)
                                                  ? Configs.data.preferences.schedule_sidebar_font_size
                                                  : 11;
-                                             return Math.max(10, Math.min(20, baseSize));
+                                             return Math.max(12, Math.min(24, Math.round(baseSize * 1.18)));
                                          }
-                                         font.bold: isCurrent || ((typeof Configs !== "undefined" && Configs.data && Configs.data.preferences && Configs.data.preferences.schedule_sidebar_font_size >= 16) || false)
+                                         font.weight: Font.DemiBold
+                                         font.bold: isCurrent || ((typeof Configs !== "undefined" && Configs.data && Configs.data.preferences && Configs.data.preferences.schedule_sidebar_font_size >= 14) || false)
                                          elide: Text.ElideRight
                                          color: isCurrent
                                              ? (Theme.isDark() ? "#FFFFFF" : itemColor)

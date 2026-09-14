@@ -13,6 +13,9 @@ develop-eggs/
 dist/
 release_station/
 release_standalone_bin/
+PySide6/
+shiboken6/
+pywin32_system32/
 downloads/
 eggs/
 .eggs/

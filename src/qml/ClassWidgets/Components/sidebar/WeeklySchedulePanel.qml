@@ -405,27 +405,38 @@ Item {
                                     anchors.bottomMargin: 2
                                     spacing: 1
 
-                                    Text {
-                                        Layout.fillWidth: true
-                                        text: modelData.subjectName || modelData.title || ""
-                                        font.pixelSize: 11
-                                        font.bold: isCurrent
-                                        elide: Text.ElideRight
-                                        color: isCurrent
-                                            ? (Theme.isDark() ? "#FFFFFF" : itemColor)
-                                            : (Theme.isDark() ? "#EDEDED" : "#1D1D1F")
-                                    }
+                                     Text {
+                                         Layout.fillWidth: true
+                                         text: modelData.subjectName || modelData.title || ""
+                                         font.pixelSize: {
+                                             var baseSize = (typeof Configs !== "undefined" && Configs.data && Configs.data.preferences && Configs.data.preferences.schedule_sidebar_font_size !== undefined)
+                                                 ? Configs.data.preferences.schedule_sidebar_font_size
+                                                 : 11;
+                                             return Math.max(12, Math.min(24, Math.round(baseSize * 1.18)));
+                                         }
+                                         font.weight: Font.DemiBold
+                                         font.bold: isCurrent || ((typeof Configs !== "undefined" && Configs.data && Configs.data.preferences && Configs.data.preferences.schedule_sidebar_font_size >= 14) || false)
+                                         elide: Text.ElideRight
+                                         color: isCurrent
+                                             ? (Theme.isDark() ? "#FFFFFF" : itemColor)
+                                             : (Theme.isDark() ? "#EDEDED" : "#1D1D1F")
+                                     }
 
-                                    Text {
-                                        Layout.fillWidth: true
-                                        text: modelData.timeRange + ((modelData.location && modelData.location !== "") ? (" · " + modelData.location) : "")
-                                        font.pixelSize: 9
-                                        elide: Text.ElideRight
-                                        color: isCurrent
-                                            ? (Theme.isDark() ? "#C4C4C8" : "#48484A")
-                                            : (Theme.isDark() ? "#8E8E93" : "#6E6E73")
-                                    }
-                                }
+                                     Text {
+                                         Layout.fillWidth: true
+                                         text: modelData.timeRange + ((modelData.location && modelData.location !== "") ? (" · " + modelData.location) : "")
+                                         font.pixelSize: {
+                                             var baseSize = (typeof Configs !== "undefined" && Configs.data && Configs.data.preferences && Configs.data.preferences.schedule_sidebar_font_size !== undefined)
+                                                 ? Configs.data.preferences.schedule_sidebar_font_size
+                                                 : 11;
+                                             return Math.max(8, Math.min(16, Math.round(baseSize * 0.82)));
+                                         }
+                                         elide: Text.ElideRight
+                                         color: isCurrent
+                                             ? (Theme.isDark() ? "#C4C4C8" : "#48484A")
+                                             : (Theme.isDark() ? "#8E8E93" : "#6E6E73")
+                                     }
+                                 }
                             }
                         }
                     }
