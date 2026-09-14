@@ -4233,14 +4233,30 @@ It&apos;s incompatible and may cause unexpected issues.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../src/qml/ClassWidgets/pages/settings/General/Sidebar.qml" line="231"/>
+        <location filename="../../src/qml/ClassWidgets/pages/settings/General/Sidebar.qml" line="239"/>
+        <source>Size &amp; Font Size</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../src/qml/ClassWidgets/pages/settings/General/Sidebar.qml" line="245"/>
+        <source>Sidebar Width</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../src/qml/ClassWidgets/pages/settings/General/Sidebar.qml" line="246"/>
+        <location filename="../../src/qml/ClassWidgets/pages/settings/General/Sidebar.qml" line="248"/>
+        <source>Adjust the overall width of the schedule sidebar (140px to 380px, default 160px)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../src/qml/ClassWidgets/pages/settings/General/Sidebar.qml" line="285"/>
         <source>Lesson Font Size</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../src/qml/ClassWidgets/pages/settings/General/Sidebar.qml" line="232"/>
-        <location filename="../../src/qml/ClassWidgets/pages/settings/General/Sidebar.qml" line="234"/>
-        <source>Adjust font size of lesson titles and schedules on the sidebar (10px to 42px, default 11px). Recommended 18px-32px for classroom large screens.</source>
+        <location filename="../../src/qml/ClassWidgets/pages/settings/General/Sidebar.qml" line="286"/>
+        <location filename="../../src/qml/ClassWidgets/pages/settings/General/Sidebar.qml" line="288"/>
+        <source>Adjust font size of lesson titles and time ranges (10px to 32px, clearer on big screens)</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
