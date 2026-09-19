@@ -87,37 +87,36 @@ jobs:
           
           # 执行平滑合并，增加二进制与语言包冲突智能消解防御
           git merge upstream/main -m "chore(upstream): 自动追随并合并官方最新代码 [$upstreamSha]" --no-commit
-          # 核心保护：二改定制仓库保留自身工作流，防止被上游修改且避免 GITHUB_TOKEN 权限拦截
-          git checkout HEAD -- .github/workflows
+          $mergeExit = $LASTEXITCODE
 
-          if ($LASTEXITCODE -ne 0) {
+          # 检查是否存在未合并冲突（优先防御 .qm 编译二进制冲突）
+          $conflicts = git diff --name-only --diff-filter=U
+          if ($conflicts) {
             Write-Host "检测到合并冲突，进入智能冲突消解与二进制修复流程..."
-            $conflicts = git diff --name-only --diff-filter=U
             Write-Host "未合并文件列表: $($conflicts -join ', ')"
             
             # 对于 .qm 等编译产物二进制文件，直接采纳上游版本或由后续 lrelease 重新生成
             foreach ($file in $conflicts) {
               if ($file -match '\.qm$') {
                 Write-Host "自动解决二进制产物冲突: $file (采用 upstream)"
-                git checkout --theirs $file
-                git add $file
+                git checkout --theirs -- $file
+                git add -- $file
               }
-            }
-            
-            # 确保工作流文件维持当前分支版本
-            git checkout HEAD -- .github/workflows
-
-            # 检查是否还有其他未解决冲突
-            $remaining = git diff --name-only --diff-filter=U
-            if ($remaining) {
-              Write-Error "存在无法自动解决的源码文本冲突，请手动干预: $($remaining -join ', ')"
-              git merge --abort
-              exit 1
             }
           }
 
-          # 确保工作流未被改动并完成合并提交
+          # 核心保护：二改定制仓库保留自身工作流，防止被上游修改且避免 GITHUB_TOKEN 权限拦截
           git checkout HEAD -- .github/workflows
+
+          # 检查是否还有其他无法自动消解的源码文本冲突
+          $remaining = git diff --name-only --diff-filter=U
+          if ($remaining) {
+            Write-Error "存在无法自动解决的源码文本冲突，请手动干预: $($remaining -join ', ')"
+            git merge --abort
+            exit 1
+          }
+
+          # 如果当前存在已解决并暂存的合并内容，执行合并提交
           git diff --cached --quiet
           if ($LASTEXITCODE -ne 0) {
             git commit -m "chore(upstream): 自动追随并合并官方最新代码 [$upstreamSha]"
