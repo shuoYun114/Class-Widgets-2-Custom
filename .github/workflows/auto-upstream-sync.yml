@@ -15,7 +15,6 @@ on:
 
 permissions:
   contents: write
-  workflows: write
 
 jobs:
   sync-and-build:
@@ -87,7 +86,10 @@ jobs:
           Write-Host "正在合并上游官方更新 ($upstreamSha) ..."
           
           # 执行平滑合并，增加二进制与语言包冲突智能消解防御
-          git merge upstream/main -m "chore(upstream): 自动追随并合并官方最新代码 [$upstreamSha]"
+          git merge upstream/main -m "chore(upstream): 自动追随并合并官方最新代码 [$upstreamSha]" --no-commit
+          # 核心保护：二改定制仓库保留自身工作流，防止被上游修改且避免 GITHUB_TOKEN 权限拦截
+          git checkout HEAD -- .github/workflows
+
           if ($LASTEXITCODE -ne 0) {
             Write-Host "检测到合并冲突，进入智能冲突消解与二进制修复流程..."
             $conflicts = git diff --name-only --diff-filter=U
@@ -102,17 +104,25 @@ jobs:
               }
             }
             
+            # 确保工作流文件维持当前分支版本
+            git checkout HEAD -- .github/workflows
+
             # 检查是否还有其他未解决冲突
             $remaining = git diff --name-only --diff-filter=U
             if ($remaining) {
               Write-Error "存在无法自动解决的源码文本冲突，请手动干预: $($remaining -join ', ')"
               git merge --abort
               exit 1
-            } else {
-              git commit -m "chore(upstream): 自动合并官方最新代码 (自动消解二进制产物冲突) [$upstreamSha]"
             }
           }
-          
+
+          # 确保工作流未被改动并完成合并提交
+          git checkout HEAD -- .github/workflows
+          git diff --cached --quiet
+          if ($LASTEXITCODE -ne 0) {
+            git commit -m "chore(upstream): 自动追随并合并官方最新代码 [$upstreamSha]"
+          }
+
           # 更新基线版本记录文件与源码版本号
           $upstreamTag = "${{ steps.check_upstream.outputs.upstream_tag }}"
           $nowIso = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
